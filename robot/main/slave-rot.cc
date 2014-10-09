@@ -22,7 +22,7 @@ int tickDirFlag = 1;
 float MV=0, iTerm = 0;    
 float delta=0, error=0, last_error=0, last_omega=0; 
 unsigned char data=0;
-float Kp = 0.750, Ki = 0.005, Kd = 0;
+float Kp = 0.950, Ki = 0.005, Kd = 0;
 float Gain = 250;
 int dirFlag = 1,movingFlag = 0,baseSub;
 float tetha = 0,tethaEnc=0,tethaMem=0,degMoved=0;
@@ -130,8 +130,8 @@ class Motor {
       else if(error < -5){MV =  (float)(error*Kp+iTerm)*tickDirFlag;}
       else MV = 0;
       if(MV > 255) MV = 255;
-      else if(MV < 13 && MV > 0) MV = 13;
-      else if(MV > -13 && MV < 0) MV = -13; //Minimum PWM so make the motor move, identified experimentally
+      else if(MV < 20 && MV > 0) MV = 20;
+      else if(MV > -20 && MV < 0) MV = -20; //Minimum PWM so make the motor move, identified experimentally
       else if(MV < -255) MV = -255;
       motorPWM_percentage(MV);
         
@@ -244,7 +244,7 @@ class Motor {
       int timeNow,timeOld;
       data = digitalRead(12);
       
-      motorPWM_percentage(-25);
+      motorPWM_percentage(-50);
       while(data)
       {
       data = digitalRead(12);
@@ -260,7 +260,7 @@ class Motor {
         }//motor.set_rpm(0);//analogWrite(11,0);
       }
       Serial.println("Starting encoder direction test");
-      motorPWM_percentage(25); //move the motor
+      motorPWM_percentage(50); //move the motor
       tickTest = read_encoder(); //read tick
  
       while (1) {
@@ -281,7 +281,7 @@ class Motor {
           }//wrong way
 
       data = digitalRead(12);
-      motorPWM_percentage(-25);
+      motorPWM_percentage(-50);
       while(data){//Return back to origin before doing anything
         data = digitalRead(12);
         delay(1);
@@ -336,8 +336,9 @@ int main() {
   long setPOINT;
   int counter=0, countSetP=0;
   long timeStamp = 0;
+  int countDir = 1;
   motor.servoInit();
-  setPOINT = 0;
+  setPOINT = 100;
   delay(1000);
   while (1) {
     // timeNow = millis();
@@ -358,11 +359,10 @@ int main() {
     if(timeNow - timeOld > 1){
       timeOld = timeNow;
       counter++;
-      if(counter == 200) {
-        // if(setPOINT >= 900) {setPOINT = 300;}
-        // else  setPOINT=setPOINT+100;
-        if(countSetP == 1) setPOINT = 900;
-        else setPOINT = 300;
+      if(counter == 100) {
+        if(setPOINT >= 100 && countDir == 0) {setPOINT=setPOINT-100;if(setPOINT <= 100) countDir = 1;}
+        else if(setPOINT <= 2500 && countDir == 1) {setPOINT=setPOINT+100;if(setPOINT >= 2500) countDir = 0;}
+        
         counter = 0;
         countSetP = !countSetP;
         }
