@@ -83,8 +83,9 @@ int main(int argc, char** argv){
   //
   for (size_t i=0; i<goals.size(); ++i) {
     send_goal(goals.at(i), ac);  
-    ros::Duration(1.0).sleep();
+    ros::Duration(5).sleep();
   }
+  while(ros::ok()){}
   
   return 0;
 }

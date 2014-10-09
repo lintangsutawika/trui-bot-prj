@@ -15,8 +15,8 @@ bool LocalPlanner::plan(const std::vector<geometry_msgs::PoseStamped>& global_pl
 
     geometry_msgs::Twist cmd_vel;
 
-    cmd_vel.linear.x = waypoint_j.pose.position.x - waypoint_i.pose.position.x;
-    cmd_vel.linear.y = waypoint_j.pose.position.y - waypoint_i.pose.position.y;
+    cmd_vel.linear.x = waypoint_j.pose.position.x - waypoint_i.pose.position.x; //need to set the dt
+    cmd_vel.linear.y = waypoint_j.pose.position.y - waypoint_i.pose.position.y; //need to set the dt
     cmd_vel.linear.z = 0.0;
 
     cmd_vel.angular.x = 0.0;// roll
