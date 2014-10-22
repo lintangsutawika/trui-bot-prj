@@ -142,7 +142,7 @@ int main() {
     // float slave2_cmd_speed= msg.vy;
     // float slave3_cmd_speed= msg.vz;
 
-    float slave2_cmd_speed= 50;
+    float slave2_cmd_speed= 50.0;
 
     //3. dispatch and send the 3 speed values
     // mavlink_message_t msg_to_slave1;
@@ -153,7 +153,24 @@ int main() {
     uint32_t time_boot_ms= millis(); 
 
     // mavlink_msg_manual_setpoint_pack(system_id, component_id, &msg_to_slave1, time_boot_ms, slave1_cmd_speed, 0., 0., 0., 0, 0);
-    mavlink_msg_manual_setpoint_pack(system_id, component_id, &msg_to_slave2, time_boot_ms, slave2_cmd_speed, 0., 0., 0., 0, 0);
+    // mavlink_msg_manual_setpoint_pack(system_id, component_id, &msg_to_slave2, 
+    //                                 time_boot_ms, 
+    //                                 slave2_cmd_speed, 0., 0., 
+    //                                  0., 
+    //                                  0, 0);
+
+    // static inline uint16_t 
+    // mavlink_msg_attitude_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
+    //                uint32_t time_boot_ms, 
+    //                float roll, float pitch, float yaw, 
+    //                float rollspeed, float pitchspeed, float yawspeed)
+
+    mavlink_msg_attitude_pack(system_id, component_id, &msg_to_slave2, 
+                              time_boot_ms,
+                              slave2_cmd_speed, 0.0, 0.0,
+                              0.0,0.0,0.0);
+
+
     // mavlink_msg_manual_setpoint_pack(system_id, component_id, &msg_to_slave3, time_boot_ms, slave3_cmd_speed, 0., 0., 0., 0, 0);
 
     // uint8_t buf1[MAVLINK_MAX_PACKET_LEN];

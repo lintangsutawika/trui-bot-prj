@@ -15,7 +15,8 @@ const int encoder_resolution = 360; //Only needed for Initialization, not used u
 
   
 trui::Motor g_motor(pwm_pin, dir_pin, encoder_out_a_pin, encoder_out_b_pin, encoder_resolution, outmax, outmin);
-static float g_cmd_speed = 0;
+
+float g_cmd_speed = 0;
 
 void setup_timer()
 {
@@ -44,19 +45,20 @@ ISR(TIMER1_COMPA_vect)        // interrupt service routine
 }
 
 int main() {
-  long timeNow = 0, timeOld = 0;
   init();// this needs to be called before setup() or some functions won't work there
   setup_timer();
   pinMode(13,OUTPUT);
   Serial.begin(57600);
 
+
   g_motor.setup();
+  // g_cmd_speed = 0;
 
   bool led_val = 0;
   while (true) {
     // //1. Wait msg from master
     const uint8_t channel = MAVLINK_COMM_0;
-    const uint8_t set_speed_msgid = MAVLINK_MSG_ID_ATTITUDE;//MAVLINK_MSG_ID_MANUAL_SETPOINT;
+    const uint8_t set_speed_msgid = MAVLINK_MSG_ID_MANUAL_SETPOINT;
     const uint8_t actual_speed_query_msgid = MAVLINK_MSG_ID_COMMAND_INT;
     
     mavlink_message_t rx_msg;
@@ -67,12 +69,6 @@ int main() {
       if (Serial.available() > 0) {
         if (mavlink_parse_char(channel, Serial.read(), &rx_msg, &rx_status)) {
           if ( (rx_msg.msgid==set_speed_msgid) ) {
-
-            
-
-            // If msg.roll is _not_ harcoded, undefined behavior happens :(
-            // msg.roll = 50;// TODO remove me!
-
             break;
           } 
           else if ( (rx_msg.msgid==actual_speed_query_msgid) ) {
@@ -82,26 +78,25 @@ int main() {
       }
     }
 
-    // //2. Identify msg
-    // //2A. If msgid = manual_setpoint, set speed control to cmd_speed
-     if ( (rx_msg.msgid==set_speed_msgid) ) {
-       mavlink_attitude_t msg;
-       mavlink_msg_attitude_decode(&rx_msg, &msg);
+    //2. Identify msg
+    //2A. If msgid = manual_setpoint, set speed control to cmd_speed
+    if ( (rx_msg.msgid==set_speed_msgid) ) {
+      mavlink_manual_setpoint_t msg;
+      mavlink_msg_manual_setpoint_decode(&rx_msg, &msg);// BUGGGY!! root of all evil in the world
+      msg.roll = 50;// TODO remove me!
 
-    // //   // msg.roll = 50;// TODO remove me!
-      // if (msg.roll == 50) {
-      //        // msg.roll = 50;
-      //         if (led_val==0) led_val = 1; else led_val = 0;
+      g_cmd_speed = msg.roll;
+      
+      // // g_cmd_speed = 50;
+      // if (g_cmd_speed == 50) {
+      //   g_cmd_speed = 50;
+      //   delay(1);
+      //   if (led_val==0) led_val = 1; else led_val = 0;
+      // }      
+      // g_cmd_speed = 50;
 
-      //         g_cmd_speed = 50;
-      //       }
-
-      msg.roll = 50.0;
-      if (msg.roll == (float)50) {
-        // msg.roll = 50.0;// this hardcode here does not make the motor work
-        g_cmd_speed = (float)msg.roll;
-        if (led_val==0) led_val = 1; else led_val = 0;
-      }      
+      // if(g_cmd_speed == 50) digitalWrite(13,HIGH); else digitalWrite(13,LOW);
+      // if (led_val==0) led_val = 1; else led_val = 0;
     } 
 
 
@@ -122,13 +117,7 @@ int main() {
     // }
 
     digitalWrite(13,led_val);
-    delay(1000);
-
-    // timeNow = millis();
-    // if(timeNow - timeOld > 50){
-    //   timeOld = timeNow;
-    //   g_motor.set_speed(g_cmd_speed);    
-    // }  
+    delay(100);
   }// while (true)
 
   return 0;
