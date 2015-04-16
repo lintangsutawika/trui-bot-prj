@@ -3,6 +3,7 @@
 //
 //
 #include <arduino/Arduino.h>
+#include <Wire.h>
 #include <ros_lib/ros.h>
 #include <ros_lib/geometry_msgs/Twist.h>
 
@@ -34,7 +35,8 @@ ros::Publisher chatter("embedded_chat", &twist_msg);
 
 
 int sendspeed1,sendspeed2,sendspeed3,hitBuffer;
-float speedX,speedY,speedW;
+float speedX,speedY,speedW,omega;
+int theta, dTheta;
 
 void assignSpeed( const geometry_msgs::Twist& rbmt_vel){
 float v1,v2,v3;
@@ -58,9 +60,13 @@ if(rbmt_vel.angular.x == 1) digitalWrite(hitPin,HIGH); else digitalWrite(hitPin,
 speedX = -trans_speedXFactor*speedX;
 speedY = trans_speedYFactor*speedY;
 
-v1 = (-sqrt(3.0)/2.0)*speedY + speedX/2 + rot_speedFactor*L*speedW;
-v2 = -speedX + rot_speedFactor*L*speedW; 
-v3 = (sqrt(3.0)/2.0)*speedY + speedX/2  + rot_speedFactor*L*speedW;
+// dTheta = speedW * 1/100;
+// theta = theta + dTheta;
+// omega = PID(theta);
+
+v1 = (-sqrt(3.0)/2.0)*speedY + speedX/2 + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
+v2 = -speedX + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
+v3 = (sqrt(3.0)/2.0)*speedY + speedX/2  + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
 
 
 sendspeed1 = v1/R*9.55; //Covert rad/s to RPM 

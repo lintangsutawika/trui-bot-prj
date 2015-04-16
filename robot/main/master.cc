@@ -1,4 +1,4 @@
-//Rosserial Node for the RBMT02
+//Rosserial Node for the RBMT01
 //@author: lintang
 //
 //
@@ -35,8 +35,8 @@ ros::Publisher chatter("embedded_chat", &twist_msg);
 
 
 int sendspeed1,sendspeed2,sendspeed3,hitBuffer;
-float speedX,speedY,speedW;
-int serveCommand;
+float speedX,speedY,speedW,omega;
+int theta, dTheta;
 
 void assignSpeed( const geometry_msgs::Twist& rbmt_vel){
 float v1,v2,v3;
@@ -54,15 +54,19 @@ float v1,v2,v3;
 speedX = rbmt_vel.linear.x;
 speedY = rbmt_vel.linear.y;
 speedW = rbmt_vel.angular.z;
-serveCommand = (int)rbmt_vel.angular.y;
-//if(rbmt_vel.angular.x == 1) serveCommand = digitalWrite(hitPin,HIGH); else digitalWrite(hitPin,LOW);
+
+if(rbmt_vel.angular.x == 1) digitalWrite(hitPin,HIGH); else digitalWrite(hitPin,LOW);
 
 speedX = -trans_speedXFactor*speedX;
 speedY = trans_speedYFactor*speedY;
 
-v1 = (-sqrt(3.0)/2.0)*speedY + speedX/2 + rot_speedFactor*L*speedW;
-v2 = -speedX + rot_speedFactor*L*speedW; 
-v3 = (sqrt(3.0)/2.0)*speedY + speedX/2  + rot_speedFactor*L*speedW;
+// dTheta = speedW * 1/100;
+// theta = theta + dTheta;
+// omega = PID(theta);
+
+v1 = (-sqrt(3.0)/2.0)*speedY + speedX/2 + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
+v2 = -speedX + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
+v3 = (sqrt(3.0)/2.0)*speedY + speedX/2  + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
 
 
 sendspeed1 = v1/R*9.55; //Covert rad/s to RPM 
@@ -85,12 +89,6 @@ delay(500);
 digitalWrite(reset1,HIGH);
 digitalWrite(reset2,HIGH);
 digitalWrite(reset3,HIGH);
-}
-
-void wireServe(byte wireData){
-  Wire.beginTransmission(12);
-  Wire.write(wireData);
-  Wire.endTransmission();
 }
 
 int main() {
@@ -117,8 +115,7 @@ int main() {
   int fromSerial_3[2];
 
   init(); //Mandatory arduino setups, hardware registers etc
-  Wire.begin(); //Start wire Comm
-  nh.initNode(); //Init board as a ROS Node
+  nh.initNode();
   nh.advertise(chatter);
   nh.subscribe(sub);
 
@@ -148,7 +145,6 @@ int main() {
   speedW = 0;
   while (true){
     
-
   // if(nh.connected()){
     if(!nh.connected()){
     //   while(true){
@@ -223,9 +219,6 @@ int main() {
     Serial1.write(buffer1, 7);
     Serial2.write(buffer2, 7);
     Serial3.write(buffer3, 7);
-
-    wireServe(serveCommand);
-
     delay(1);
   nh.spinOnce();
   
