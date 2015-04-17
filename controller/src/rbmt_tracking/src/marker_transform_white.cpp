@@ -25,11 +25,11 @@
 
 ros::Publisher transform_pub;
 ros::Publisher marker_pub;
-ros::Publisher move_pub;
+// ros::Publisher move_pub;
 
 geometry_msgs::Point last, p;
 geometry_msgs::PoseStamped black_pose, white_pose, final_pose;
-geometry_msgs::Twist move;
+// geometry_msgs::Twist move;
 
 visualization_msgs::Marker marker, line, points;
 
@@ -130,7 +130,7 @@ void transformer_white (const geometry_msgs::PoseStamped& sPose)
 
   x_temp = x_temp;
   y_temp = y_temp;
-  z_temp = z_temp+ 0.5;
+  z_temp = z_temp;
 
   white_pose.pose.position.x = x_temp;
   white_pose.pose.position.y = y_temp;
@@ -189,40 +189,42 @@ int main (int argc, char** argv)
 
   transform_pub = nh.advertise<geometry_msgs::PoseStamped>("transformed_pose", 1);
   marker_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 1);
-  move_pub = nh.advertise<geometry_msgs::Twist>("kinect_velocity", 1,false);
+  // move_pub = nh.advertise<geometry_msgs::Twist>("kinect_velocity", 1,false);
 
   // ros::Timer timer1 = n.createTimer(ros::Duration(0.1), callback1);
   // geometry_msgs::PoseStamped msg = ros::topic::waitForMessage<geometry_msgs::PoseStamped>(cock_pose_white, ros::Duration(2));
     
 
-  while(nh.ok() and ros::ok()) {
-    marker_pub.publish(marker);
-    marker_pub.publish(line);
-    marker_pub.publish(points);
+  // while(nh.ok() and ros::ok()) {
+  //   marker_pub.publish(marker);
+  //   marker_pub.publish(line);
+  //   marker_pub.publish(points);
 
-    if ( is_valid(marker) ) {
-      if((marker.pose.position.x > 0.05 || marker.pose.position.x < -0.05) && (marker.pose.position.y > 0.05 || marker.pose.position.y < -0.05)) {
-        if(marker.pose.position.x > 0) move.linear.x = 1;
-        else move.linear.x = -1;
-        if(marker.pose.position.y > 0) move.linear.y = -1;
-        else move.linear.y = 1;
-      }
-      else if(marker.pose.position.x > 0.05 || marker.pose.position.x < -0.05) {
-        if(marker.pose.position.x > 0) move.linear.x = 1;
-        else move.linear.x = -1;
-      }
-      else if(marker.pose.position.y > 0.05 || marker.pose.position.y < -0.05) {
-        if(marker.pose.position.y > 0) move.linear.y = -1;
-        else move.linear.y = 1;
-      }
-    } 
-    else {
-      move.linear.x = 0;
-      move.linear.y = 0; 
-    }
+  //   if ( is_valid(marker) ) {
+  //     if((marker.pose.position.x > 0.05 || marker.pose.position.x < -0.05) && (marker.pose.position.y > 0.05 || marker.pose.position.y < -0.05)) {
+  //       if(marker.pose.position.x > 0) move.linear.x = 1;
+  //       else move.linear.x = -1;
+  //       if(marker.pose.position.y > 0) move.linear.y = -1;
+  //       else move.linear.y = 1;
+  //     }
+  //     else if(marker.pose.position.x > 0.05 || marker.pose.position.x < -0.05) {
+  //       if(marker.pose.position.x > 0) move.linear.x = 1;
+  //       else move.linear.x = -1;
+  //     }
+  //     else if(marker.pose.position.y > 0.05 || marker.pose.position.y < -0.05) {
+  //       if(marker.pose.position.y > 0) move.linear.y = -1;
+  //       else move.linear.y = 1;
+  //     }
+  //   } 
+  //   else {
+  //     move.linear.x = 0;
+  //     move.linear.y = 0; 
+  //   }
 
-    move_pub.publish(move);
-    ros::Duration(0.1).sleep();
-    ros::spinOnce();
-  }
+  //   move_pub.publish(move);
+  //   ros::Duration(0.1).sleep();
+    // ros::spinOnce();
+  // }
+
+  ros::spin();
 }

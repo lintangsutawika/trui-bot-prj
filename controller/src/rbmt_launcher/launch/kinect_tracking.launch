@@ -1,7 +1,7 @@
 <launch>  
   
   <arg name="rviz" default="True" />
-  <arg name="kinect_black" default="True"/>
+  <arg name="kinect_black" default="False"/>
   <arg name="kinect_white" default="True"/>
 
   <include file="$(find rbmt_tracking)/launch/freenect_white.launch"/>
