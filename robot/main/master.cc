@@ -73,58 +73,117 @@ if(rbmt_vel.angular.x == 1) digitalWrite(hitPin,HIGH); else digitalWrite(hitPin,
 
 //Acceleration & Decceleration profile
 float max_AccelerationX = 1;
-float max_AccelerationY = 3; 
-// int accelTimeX = float(speedX_fromTwist / max_Acceleration);
-// int accelTimeY = float(speedY_fromTwist / max_Acceleration);
-// int accel_timerIncX = accelTimeX*100;
-// int accel_timerIncY = accelTimeY*100;
-
-// if((speedY_fromTwist != speedY_fromTwist) && accelerationAction != DONE){
-  // do_acceleration = 1;
-// }
-// else do_acceleration = 0;
-
-// if( timerCounterX < accel_timerIncX ){
-//   speedX = max_Acceleration* timerCounterX;
-// }
-// else if( timerCounterX >= accelTimeX ){
-//   accelerationAction = DONE;
-//   speedX =speedX_fromTwist;
-// }
-
-if( speedX < speedX_fromTwist){
-  if(do_accelerationX == 1){
-    do_accelerationX = 0;
-    speedX = speedX + max_AccelerationX*0.01;//max_Acceleration*(10/1000);
+float max_DecelerationX = 1;
+float max_AccelerationY = 3;
+float max_DecelerationY = 3;
+// accelration -> 0 to 1 or 0 to -1, decceleration 1 to 0 or -1 to 0;
+//1) see if the target velocity is either positive of negative
+//2) is the speed accelerating (target speed > current) or deccelerating (target speed < current)
+if( speedX_fromTwist > 0){ //Clockwise direction
+  if(speedX_fromTwist > speedX){ //accelerating
+    if(do_accelerationX == 1){
+      do_accelerationX = 0;
+      speedX = speedX + max_AccelerationX*0.01;//max_Acceleration*(10/1000);
+    }
   }
-}
-else if( speedX >= speedX_fromTwist ){
-  do_accelerationX = 0;
-  // timerCounterY =0;
-  speedX = speedX_fromTwist;
+  else if (speedX_fromTwist < speedX){ //deccelerating
+    if(do_accelerationX == 1){
+      do_accelerationX = 0;
+      speedX = speedX - max_DecelerationX*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else speedX = speedX_fromTwist;
 }
 
-if( speedY < speedY_fromTwist){
-  if(do_accelerationY == 1){
-    do_accelerationY = 0;
-    speedY = speedY + max_AccelerationY*0.01;//max_Acceleration*(10/1000);
+else if(speedX_fromTwist < 0){ //Counter clockwise direction
+  if(speedX_fromTwist > speedX){ //deceleration
+    if(do_accelerationX == 1){
+      do_accelerationX = 0;
+      speedX = speedX + max_DecelerationX*0.01;//max_Acceleration*(10/1000);
+    }
   }
+  else if (speedX_fromTwist < speedX){ //acceleration
+    if(do_accelerationX == 1){
+      do_accelerationX = 0;
+      speedX = speedX - max_AccelerationX*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else speedX = speedX_fromTwist;
 }
-else if( speedY >= speedY_fromTwist ){
-  do_accelerationY = 0;
-  // timerCounterY =0;
-  speedY =speedY_fromTwist;
+
+else {
+  speedX = 0;
 }
+
+if( speedY_fromTwist > 0){ //Clockwise direction
+  if(speedY_fromTwist > speedY){ //accelerating
+    if(do_accelerationY == 1){
+      do_accelerationY = 0;
+      speedY = speedY + max_AccelerationY*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else if (speedY_fromTwist < speedY){ //deccelerating
+    if(do_accelerationY == 1){
+      do_accelerationY = 0;
+      speedY = speedY - max_DecelerationY*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else speedY = speedY_fromTwist;
+}
+
+else if(speedY_fromTwist < 0){ //Counter clockwise direction
+  if(speedY_fromTwist > speedY){ //deceleration
+    if(do_accelerationY == 1){
+      do_accelerationY = 0;
+      speedY = speedY + max_DecelerationY*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else if (speedY_fromTwist < speedY){ //acceleration
+    if(do_accelerationY == 1){
+      do_accelerationY = 0;
+      speedY = speedY - max_AccelerationY*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else speedY = speedY_fromTwist;
+}
+
+else {
+  speedY = 0;
+}
+
+// if( speedX < speedX_fromTwist){ //acceleration
+//   if(do_accelerationX == 1){
+//     do_accelerationX = 0;
+//     speedX = speedX + max_AccelerationX*0.01;//max_Acceleration*(10/1000);
+//   }
+// }
+// else if(speedX >= speedX_fromTwist){ //decceleration
+//      do_accelerationX = 0;
+//      speedX = speedX_fromTwist;//max_Acceleration*(10/1000);
+// }
+
+
+// if( speedY < speedY_fromTwist){
+//   if(do_accelerationY == 1){
+//     do_accelerationY = 0;
+//     speedY = speedY + max_AccelerationY*0.01;//max_Acceleration*(10/1000);
+//   }
+// }
+// else if( speedY >= speedY_fromTwist ){
+//   do_accelerationY = 0;
+//   // timerCounterY =0;
+//   speedY =speedY_fromTwist;
+// }
 
 
 
 Last_speedX_fromTwist = speedX_fromTwist; 
 Last_speedY_fromTwist = speedY_fromTwist;
 Last_speedW_fromTwist = speedW_fromTwist;
+
 // dTheta = speedW * 1/100;
 // theta = theta + dTheta;
 // omega = PID(theta);
-// speedX = -0.4;
 
 v1 = (-sqrt(3.0)/2.0)*speedY - speedX/2 + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
 v2 = +speedX + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
@@ -139,6 +198,7 @@ sendspeed3 = v3/R*9.55; //Covert rad/s to RPM
 ISR(TIMER1_COMPA_vect){
   if(do_accelerationX == 0){do_accelerationX = 1;}
   if(do_accelerationY == 0){do_accelerationY = 1;}
+  //PID for orientation control
 }
 
 ros::Subscriber<geometry_msgs::Twist> sub("read_velocity", &assignSpeed );

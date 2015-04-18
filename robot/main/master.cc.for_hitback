@@ -28,6 +28,8 @@
 
 #define initialSpeed 0
 
+#define DONE 1
+
 ros::NodeHandle nh;
 geometry_msgs::Twist twist_msg;
 
@@ -35,8 +37,17 @@ ros::Publisher chatter("embedded_chat", &twist_msg);
 
 
 int sendspeed1,sendspeed2,sendspeed3,hitBuffer;
+float speedX_fromTwist,speedY_fromTwist,speedW_fromTwist;//omega;
+float Last_speedX_fromTwist,Last_speedY_fromTwist,Last_speedW_fromTwist;//omega;
 float speedX,speedY,speedW,omega;
 int theta, dTheta;
+int timerCounterX,timerCounterY;
+bool do_accelerationX = 0;
+bool do_accelerationY = 0;
+bool do_decceleration = 0;
+bool accelerationAction = 0;
+bool deccelerationAction = 0;
+// int accel_timerIncY;
 
 void assignSpeed( const geometry_msgs::Twist& rbmt_vel){
 float v1,v2,v3;
@@ -51,27 +62,143 @@ float v1,v2,v3;
 //   0.0        ,  1.0    , -1.0
 //-sqrt(3.0)/2.0, -1.0/2.0, -1.0;
 
-speedX = rbmt_vel.linear.x;
-speedY = rbmt_vel.linear.y;
-speedW = rbmt_vel.angular.z;
+speedX_fromTwist = rbmt_vel.linear.x;
+speedY_fromTwist = rbmt_vel.linear.y;
+speedW_fromTwist = rbmt_vel.angular.z;
 
 if(rbmt_vel.angular.x == 1) digitalWrite(hitPin,HIGH); else digitalWrite(hitPin,LOW);
 
-speedX = -trans_speedXFactor*speedX;
-speedY = trans_speedYFactor*speedY;
+// speedX = -trans_speedXFactor*speedX;
+// speedY = trans_speedYFactor*speedY;
+
+//Acceleration & Decceleration profile
+float max_AccelerationX = 1;
+float max_DecelerationX = 1;
+float max_AccelerationY = 3;
+float max_DecelerationY = 3;
+// accelration -> 0 to 1 or 0 to -1, decceleration 1 to 0 or -1 to 0;
+//1) see if the target velocity is either positive of negative
+//2) is the speed accelerating (target speed > current) or deccelerating (target speed < current)
+if( speedX_fromTwist > 0){ //Clockwise direction
+  if(speedX_fromTwist > speedX){ //accelerating
+    if(do_accelerationX == 1){
+      do_accelerationX = 0;
+      speedX = speedX + max_AccelerationX*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else if (speedX_fromTwist < speedX){ //deccelerating
+    if(do_accelerationX == 1){
+      do_accelerationX = 0;
+      speedX = speedX - max_DecelerationX*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else speedX = speedX_fromTwist;
+}
+
+else if(speedX_fromTwist < 0){ //Counter clockwise direction
+  if(speedX_fromTwist > speedX){ //deceleration
+    if(do_accelerationX == 1){
+      do_accelerationX = 0;
+      speedX = speedX + max_DecelerationX*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else if (speedX_fromTwist < speedX){ //acceleration
+    if(do_accelerationX == 1){
+      do_accelerationX = 0;
+      speedX = speedX - max_AccelerationX*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else speedX = speedX_fromTwist;
+}
+
+else {
+  speedX = 0;
+}
+
+if( speedY_fromTwist > 0){ //Clockwise direction
+  if(speedY_fromTwist > speedY){ //accelerating
+    if(do_accelerationY == 1){
+      do_accelerationY = 0;
+      speedY = speedY + max_AccelerationY*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else if (speedY_fromTwist < speedY){ //deccelerating
+    if(do_accelerationY == 1){
+      do_accelerationY = 0;
+      speedY = speedY - max_DecelerationY*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else speedY = speedY_fromTwist;
+}
+
+else if(speedY_fromTwist < 0){ //Counter clockwise direction
+  if(speedY_fromTwist > speedY){ //deceleration
+    if(do_accelerationY == 1){
+      do_accelerationY = 0;
+      speedY = speedY + max_DecelerationY*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else if (speedY_fromTwist < speedY){ //acceleration
+    if(do_accelerationY == 1){
+      do_accelerationY = 0;
+      speedY = speedY - max_AccelerationY*0.01;//max_Acceleration*(10/1000);
+    }
+  }
+  else speedY = speedY_fromTwist;
+}
+
+else {
+  speedY = 0;
+}
+
+// if( speedX < speedX_fromTwist){ //acceleration
+//   if(do_accelerationX == 1){
+//     do_accelerationX = 0;
+//     speedX = speedX + max_AccelerationX*0.01;//max_Acceleration*(10/1000);
+//   }
+// }
+// else if(speedX >= speedX_fromTwist){ //decceleration
+//      do_accelerationX = 0;
+//      speedX = speedX_fromTwist;//max_Acceleration*(10/1000);
+// }
+
+
+// if( speedY < speedY_fromTwist){
+//   if(do_accelerationY == 1){
+//     do_accelerationY = 0;
+//     speedY = speedY + max_AccelerationY*0.01;//max_Acceleration*(10/1000);
+//   }
+// }
+// else if( speedY >= speedY_fromTwist ){
+//   do_accelerationY = 0;
+//   // timerCounterY =0;
+//   speedY =speedY_fromTwist;
+// }
+
+
+
+Last_speedX_fromTwist = speedX_fromTwist; 
+Last_speedY_fromTwist = speedY_fromTwist;
+Last_speedW_fromTwist = speedW_fromTwist;
 
 // dTheta = speedW * 1/100;
 // theta = theta + dTheta;
 // omega = PID(theta);
 
-v1 = (-sqrt(3.0)/2.0)*speedY + speedX/2 + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
-v2 = -speedX + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
-v3 = (sqrt(3.0)/2.0)*speedY + speedX/2  + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
+v1 = (-sqrt(3.0)/2.0)*speedY - speedX/2 + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
+v2 = +speedX + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
+v3 = (sqrt(3.0)/2.0)*speedY - speedX/2  + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
 
 
 sendspeed1 = v1/R*9.55; //Covert rad/s to RPM 
 sendspeed2 = v2/R*9.55; //Covert rad/s to RPM
 sendspeed3 = v3/R*9.55; //Covert rad/s to RPM 
+}
+
+ISR(TIMER1_COMPA_vect){
+  if(do_accelerationX == 0){do_accelerationX = 1;}
+  if(do_accelerationY == 0){do_accelerationY = 1;}
+  //PID for orientation control
 }
 
 ros::Subscriber<geometry_msgs::Twist> sub("read_velocity", &assignSpeed );
@@ -89,6 +216,27 @@ delay(500);
 digitalWrite(reset1,HIGH);
 digitalWrite(reset2,HIGH);
 digitalWrite(reset3,HIGH);
+}
+
+void intteruptSetup(){
+    // initialize timer1 
+  noInterrupts();           // disable all interrupts
+  TCCR1A = 0;      // set entire TCCR1A register to 0
+  TCCR1B = 0;     // same for TCCR1B
+ 
+  // set compare match register to desired timer count:
+  OCR1A = 155;//780;
+                    // target time = timer resolution * (timer counts + 1)
+                   // (timer counts + 1) = target time / timer resolution
+                   // (timer counts + 1) = 5*10^-3 / (1 / (16.10^6 / 1024))
+  // turn on CTC mode:
+  TCCR1B |= (1 << WGM12);
+  // Set CS10 and CS12 bits for 1024 prescaler:
+  TCCR1B |= (1 << CS10);
+  TCCR1B |= (1 << CS12);
+  // enable timer compare interrupt:
+  TIMSK1 |= (1 << OCIE1A);
+  interrupts();             // enable all interrupts
 }
 
 int main() {
@@ -115,6 +263,7 @@ int main() {
   int fromSerial_3[2];
 
   init(); //Mandatory arduino setups, hardware registers etc
+  intteruptSetup();
   nh.initNode();
   nh.advertise(chatter);
   nh.subscribe(sub);
@@ -155,27 +304,29 @@ int main() {
     }
   // } 
 
-    if(Serial1.available()){//&& Serial1.read() == 0xCE){
-      fromSerial_1[0] = Serial1.read();
-      // fromSerial_1[1] = Serial1.read();
-      twist_msg.linear.x = (fromSerial_1[0]);// | (fromSerial_1[1]<<8));
-    }
+    // if(Serial1.available()){//&& Serial1.read() == 0xCE){
+    //   fromSerial_1[0] = Serial1.read();
+    //   // fromSerial_1[1] = Serial1.read();
+    //   twist_msg.linear.x = (fromSerial_1[0]);// | (fromSerial_1[1]<<8));
+    // }
 
-    if(Serial2.available()){// && Serial2.read() == 0xCE){
-      fromSerial_2[0] = Serial2.read();
-      // fromSerial_2[1] = Serial2.read();
-      twist_msg.linear.y = (fromSerial_2[0]);// | (fromSerial_2[1]<<8));
-    }
+    // if(Serial2.available()){// && Serial2.read() == 0xCE){
+    //   fromSerial_2[0] = Serial2.read();
+    //   // fromSerial_2[1] = Serial2.read();
+    //   twist_msg.linear.y = (fromSerial_2[0]);// | (fromSerial_2[1]<<8));
+    // }
 
-    if(Serial3.available()){// && Serial3.read() == 0xCE){
-      fromSerial_3[0] = Serial3.read();
-      // fromSerial_3[1] = Serial3.read();
-      twist_msg.linear.z = (fromSerial_3[0]);// | (fromSerial_3[1]<<8));
-    }
-
-    twist_msg.angular.x = sendspeed1;
-    twist_msg.angular.y = sendspeed2;
-    twist_msg.angular.z = sendspeed3;
+    // if(Serial3.available()){// && Serial3.read() == 0xCE){
+    //   fromSerial_3[0] = Serial3.read();
+    //   // fromSerial_3[1] = Serial3.read();
+    //   twist_msg.linear.z = (fromSerial_3[0]);// | (fromSerial_3[1]<<8));
+    // }
+    twist_msg.linear.x  = speedY_fromTwist;
+    twist_msg.linear.y  = speedX_fromTwist;
+    twist_msg.linear.z  = 0;
+    twist_msg.angular.x = speedY; //sendspeed1;
+    twist_msg.angular.y = speedX;//sendspeed2;
+    twist_msg.angular.z = 0;//do_acceleration;//sendspeed3;
 
     chatter.publish( &twist_msg );
     
@@ -219,13 +370,8 @@ int main() {
     Serial1.write(buffer1, 7);
     Serial2.write(buffer2, 7);
     Serial3.write(buffer3, 7);
-    delay(1);
+    // delay(1);
   nh.spinOnce();
-  
-
-
-
-
   
   }
   return 0;
