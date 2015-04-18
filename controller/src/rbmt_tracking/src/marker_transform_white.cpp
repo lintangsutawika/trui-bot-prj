@@ -117,7 +117,7 @@ void transformer_white (const geometry_msgs::PoseStamped& sPose)
   // angular transform on x - z plane
   r = sqrt((z_temp*z_temp) + (x_temp*x_temp));
   th = atan(z_temp/x_temp);
-  th = th + (27*M_PI/180);
+  th = th + (22*M_PI/180);
   x_temp = r * cos(th);
   z_temp = r * sin(th);
 
