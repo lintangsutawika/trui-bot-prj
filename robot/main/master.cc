@@ -6,8 +6,7 @@
 #include <Wire.h>
 #include <ros_lib/ros.h>
 #include <ros_lib/geometry_msgs/Twist.h>
-#include <MPU6050/I2Cdev.h>
-#include <MPU6050/MPU6050_6Axis_MotionApps20.h>
+#include <sensor/oc.h>
 
 //Robot Kinematic Properties
 #define L 0.45 //in meters, distance from wheel to center
@@ -20,10 +19,10 @@
 
 
 #define debugPin 13
-#define hitPin 20
-#define risePin 21
-#define miscPneu1 22
-#define miscPneu2 23
+#define hitPin 24
+#define risePin 25
+#define miscPneu1 26
+#define miscPneu2 27
 #define reset1 41
 #define reset2 42
 #define reset3 43
@@ -34,13 +33,15 @@
 #define OUTPUT_READABLE_YAWPITCHROLL
 ros::NodeHandle nh;
 geometry_msgs::Twist twist_msg;
-
 ros::Publisher chatter("embedded_chat", &twist_msg);
 
+trui::Oc* g_oc;
+  
 
 int sendspeed1,sendspeed2,sendspeed3,hitBuffer;
 float speedX_fromTwist,speedY_fromTwist,speedW_fromTwist;//omega;
-float speedX,speedY,speedW,omega;
+float speedX,speedY,speedW,omega, readYaw;
+float setYaw = 0;
 int theta, dTheta;
 int timerCounterX,timerCounterY;
 bool do_accelerationX = 0;
@@ -48,31 +49,30 @@ bool do_accelerationY = 0;
 bool do_decceleration = 0;
 bool accelerationAction = 0;
 bool deccelerationAction = 0;
+
+bool toggleFlag = 0;
 // int accel_timerIncY;
 
-// MPU control/status vars
-bool dmpReady = false;  // set true if DMP init was successful
-uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
-uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
-uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
-uint16_t fifoCount;     // count of all bytes currently in FIFO
-uint8_t fifoBuffer[64]; // FIFO storage buffer
+void toggleReset(){
 
-// orientation/motion vars
-Quaternion q;           // [w, x, y, z]         quaternion container
-VectorInt16 aa;         // [x, y, z]            accel sensor measurements
-VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
-VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
-VectorFloat gravity;    // [x, y, z]            gravity vector
-float euler[3];         // [psi, theta, phi]    Euler angle container
-float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
-volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
-
-MPU6050 mpu;
-
+// digitalWrite(reset1,HIGH);
+// digitalWrite(reset2,HIGH);
+// digitalWrite(reset3,HIGH);
+delay(100);
+digitalWrite(reset1,LOW);
+digitalWrite(reset2,LOW);
+digitalWrite(reset3,LOW);
+digitalWrite(13,LOW);
+delay(500);
+digitalWrite(reset1,HIGH);
+digitalWrite(reset2,HIGH);
+digitalWrite(reset3,HIGH);
+digitalWrite(13,HIGH);
+}
 
 void assignSpeed( const geometry_msgs::Twist& rbmt_vel){
 float v1,v2,v3;
+int rbmt_command;
 
 //      Vy
 //      ^
@@ -87,18 +87,28 @@ float v1,v2,v3;
 speedX_fromTwist = rbmt_vel.linear.x;
 speedY_fromTwist = rbmt_vel.linear.y;
 speedW_fromTwist = rbmt_vel.angular.z;
-
+rbmt_command     = (int)rbmt_vel.angular.y;
+if((rbmt_command & B00000001) == 1) {} else if((rbmt_command & B00000100) == 0) {}
+if((rbmt_command & B00000010)>>1 == 1) {} else if((rbmt_command & B00000100)>>1 == 0) {}
+if((rbmt_command & B00000100)>>2 == 1) {} else if((rbmt_command & B00000100)>>2 == 0){}
+if((rbmt_command & B00001000)>>3 == 1) {toggleFlag = 1;} else if((rbmt_command & B00000100)>>2 == 0) {toggleFlag = 0;}
 if(rbmt_vel.angular.x == 1) digitalWrite(hitPin,HIGH); else digitalWrite(hitPin,LOW);
 
 // speedX = -trans_speedXFactor*speedX;
 // speedY = trans_speedYFactor*speedY;
-
+speedW = speedW_fromTwist;
 //Acceleration & Decceleration profile
-float max_AccelerationX = 1;
-float max_DecelerationX = 1;
-float max_AccelerationY = 3;
-float max_DecelerationY = 3;
-// accelration -> 0 to 1 or 0 to -1, decceleration 1 to 0 or -1 to 0;
+//determine the direction of the acceleration;
+//
+float max_Acceleration = 1;
+
+float max_AccelerationX = max_Acceleration * cos(atan2(speedY_fromTwist, speedX_fromTwist));//all in m/s^2
+float max_DecelerationX = 0;
+float max_AccelerationY = max_Acceleration * sin(atan2(speedY_fromTwist, speedX_fromTwist));//all in m/s^2
+float max_DecelerationY = 0;
+max_AccelerationX = abs(max_AccelerationX);
+max_AccelerationY = abs(max_AccelerationY);
+
 //1) see if the target velocity is either positive of negative
 //2) is the speed accelerating (target speed > current) or deccelerating (target speed < current)
 if( speedX_fromTwist > 0){ //Clockwise direction
@@ -177,9 +187,9 @@ else {
 // theta = theta + dTheta;
 // omega = PID(theta);
 
-v1 = (-sqrt(3.0)/2.0)*speedY - speedX/2 + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
-v2 = +speedX + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
-v3 = (sqrt(3.0)/2.0)*speedY - speedX/2  + rot_speedFactor*L*speedW; //rot_speedFactor*L*omega;
+v1 = (-sqrt(3.0)/2.0)*speedY - speedX/2 + rot_speedFactor*L*omega; //rot_speedFactor*L*omega;
+v2 = +speedX + rot_speedFactor*L*omega; //rot_speedFactor*L*omega;
+v3 = (sqrt(3.0)/2.0)*speedY - speedX/2  + rot_speedFactor*L*omega; //rot_speedFactor*L*omega;
 
 
 sendspeed1 = v1/R*9.55; //Covert rad/s to RPM 
@@ -191,24 +201,12 @@ ISR(TIMER1_COMPA_vect){
   if(do_accelerationX == 0){do_accelerationX = 1;}
   if(do_accelerationY == 0){do_accelerationY = 1;}
   //PID for orientation control
+  if (g_oc != NULL) {
+    omega = g_oc->set_orientation(0, readYaw);
+  }
 }
 
 ros::Subscriber<geometry_msgs::Twist> sub("read_velocity", &assignSpeed );
-
-void toggleReset(){
-
-// digitalWrite(reset1,HIGH);
-// digitalWrite(reset2,HIGH);
-// digitalWrite(reset3,HIGH);
-// delay(500);
-digitalWrite(reset1,LOW);
-digitalWrite(reset2,LOW);
-digitalWrite(reset3,LOW);
-delay(500);
-digitalWrite(reset1,HIGH);
-digitalWrite(reset2,HIGH);
-digitalWrite(reset3,HIGH);
-}
 
 void intteruptSetup(){
     // initialize timer1 
@@ -231,78 +229,9 @@ void intteruptSetup(){
   interrupts();             // enable all interrupts
 }
 
-void initIMU(){
-    // join I2C bus (I2Cdev library doesn't do this automatically)
-    Wire.begin();
-    TWBR = 24; // 400kHz I2C clock (200kHz if CPU is 8MHz)
-    
-    mpu.initialize();
-    mpu.testConnection();
-    devStatus = mpu.dmpInitialize();
-
-    // supply your own gyro offsets here, scaled for min sensitivity
-    mpu.setXGyroOffset(220);
-    mpu.setYGyroOffset(76);
-    mpu.setZGyroOffset(-85);
-    mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
-
-    // make sure it worked (returns 0 if so)
-    if (devStatus == 0) {
-        mpu.setDMPEnabled(true);
-
-        mpuIntStatus = mpu.getIntStatus();
-
-        // set our DMP Ready flag so the main loop() function knows it's okay to use it
-        dmpReady = true;
-        mpuInterrupt = true;
-        // get expected DMP packet size for later comparison
-        packetSize = mpu.dmpGetFIFOPacketSize();
-    } else {}
-
-}
-
-void readYPR(){
 
 
-    // reset interrupt flag and get INT_STATUS byte
-    mpuInterrupt = false;
-    mpuIntStatus = mpu.getIntStatus();
 
-    // get current FIFO count
-    fifoCount = mpu.getFIFOCount();
-
-    // check for overflow (this should never happen unless our code is too inefficient)
-    if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
-        // reset so we can continue cleanly
-        mpu.resetFIFO();
-//        Serial.println(F("FIFO overflow!"));
-
-    // otherwise, check for DMP data ready interrupt (this should happen frequently)
-    } else if (mpuIntStatus & 0x02) {
-        // wait for correct available data length, should be a VERY short wait
-        while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
-
-        // read a packet from FIFO
-        mpu.getFIFOBytes(fifoBuffer, packetSize);
-        
-        // track FIFO count here in case there is > 1 packet available
-        // (this lets us immediately read more without waiting for an interrupt)
-        fifoCount -= packetSize;
-
-        #ifdef OUTPUT_READABLE_YAWPITCHROLL
-            // display Euler angles in degrees
-            mpu.dmpGetQuaternion(&q, fifoBuffer);
-            mpu.dmpGetGravity(&gravity, &q);
-            mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-            // Serial.print("ypr\t");
-            // Serial.print(ypr[0] * (180/PI));
-            // Serial.print("\t");
-            // Serial.print(ypr[1] * (180/PI));
-            // Serial.print("\t");
-            // Serial.println(ypr[2] * (180/PI));
-        #endif
-    }
-}
 
 int main() {
 
@@ -322,6 +251,8 @@ int main() {
   const uint8_t position_mode= 0x0B;
   const uint8_t hit_flag = 0x0F;
   const uint8_t rise_flag =0xF0;
+
+  bool toggleCount = 0;
   
   int fromSerial_1[2];
   int fromSerial_2[2];
@@ -329,11 +260,12 @@ int main() {
 
   init(); //Mandatory arduino setups, hardware registers etc
   intteruptSetup();
-  initIMU();
+  
   nh.initNode();
   nh.advertise(chatter);
   nh.subscribe(sub);
 
+  g_oc = new trui::Oc();
   // Serial.begin(115200);
   Serial1.begin(9600);
   Serial2.begin(9600);    
@@ -359,7 +291,11 @@ int main() {
   speedY = 0;
   speedW = 0;
   while (true){
-    readYPR();
+
+   if(toggleFlag == 1 && toggleCount == 0){toggleCount = 1;toggleReset();}
+   else if(toggleFlag == 0 && toggleCount == 1){toggleCount = 0;}
+
+    readYaw = g_oc->read_ypr();
   // if(nh.connected()){
     if(!nh.connected()){
     //   while(true){
@@ -387,12 +323,12 @@ int main() {
     //   // fromSerial_3[1] = Serial3.read();
     //   twist_msg.linear.z = (fromSerial_3[0]);// | (fromSerial_3[1]<<8));
     // }
-    twist_msg.linear.x  = speedY;
-    twist_msg.linear.y  = speedX;
-    twist_msg.linear.z  = 0;
-    twist_msg.angular.x = ypr[0] * (180/PI);
-    twist_msg.angular.y = ypr[1] * (180/PI);
-    twist_msg.angular.z = ypr[2] * (180/PI);
+    twist_msg.linear.x  = sendspeed1;//speedY;
+    twist_msg.linear.y  = sendspeed2;//speedX;
+    twist_msg.linear.z  = sendspeed3;
+    twist_msg.angular.x = 0;//ypr[0] * (180/PI);
+    twist_msg.angular.y = omega;//ypr[1] * (180/PI);
+    twist_msg.angular.z = readYaw;//ypr[2] * (180/PI);
 
     chatter.publish( &twist_msg );
     
@@ -440,5 +376,7 @@ int main() {
   nh.spinOnce();
   
   }
+
+  delete g_oc;
   return 0;
 }

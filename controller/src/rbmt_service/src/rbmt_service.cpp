@@ -72,7 +72,7 @@ void ServiceTeleop::run(ros::Rate rate) {
   // axes(5): RT _must_ be initialized because _before_ first update _only_, axes_.at(5) has a normal value of 0, plus, if another axes is pushed before RT is initialized, then RT changes to not-normal value; weird!
   bool RT_initialized = false;
   bool LT_initialized = false;
-  bool squareCount, triangleCount,circleCount, crossCount, R1Count;
+  bool squareCount, triangleCount,circleCount, crossCount, R1Count, StartCount;
 
   ROS_INFO("This is RBMT02, Lock and Load");
   // ROS_INFO("Waiting for LT (axis(2)) and RT (axis(5)) to be initialized.");
@@ -91,9 +91,9 @@ void ServiceTeleop::run(ros::Rate rate) {
 
     if(axisX_ <= 148 and axisX_ >= 108) axisX_ = 128;
     if(axisY_ <= 148 and axisY_ >= 108) axisY_ = 128;
-    speedX_ = float(axisX_-128)/128 * 3;///128 * 1.5);//4.5;//map(presentPosition_VX, -128, 127, -4.5, 4.5);
-    speedY_ = - float(axisY_-128)/128 * 3;///128 * 1.5);//map(presentPosition_VY, -128, 128, -5, 5);
-    if(buttonR2_ == 1) speedW_ = -1.5; else if(buttonL2_ == 1) speedW_ = 1.5; else speedW_ = 0;
+    speedX_ = float(axisX_-128)/128 * 2;///128 * 1.5);//4.5;//map(presentPosition_VX, -128, 127, -4.5, 4.5);
+    speedY_ = - float(axisY_-128)/128 * 2;///128 * 1.5);//map(presentPosition_VY, -128, 128, -5, 5);
+    if(buttonR2_ == 1) speedW_ = -1.0; else if(buttonL2_ == 1) speedW_ = 1.0; else speedW_ = 0;
 
     if(buttonL1_ == 1){
       speedX_ = 0.7*speedX_;
@@ -143,13 +143,13 @@ void ServiceTeleop::run(ros::Rate rate) {
         serviceByte_ = serviceByte_ -4;
       }
 
-      if(buttonR1_ == 1 && R1Count == 0){
-        R1Count = 1;
+      if(buttonStart_ == 1 && StartCount == 0){
+        StartCount = 1;
         serviceByte_ = serviceByte_ +8;
-        ROS_INFO("buttonCircle_ is a Go");
+        ROS_INFO("buttonStart_ is a Go");
         }
-      else if(buttonR1_ == 0 && R1Count == 1){
-        R1Count = 0;
+      else if(buttonStart_ == 0 && StartCount == 1){
+        StartCount = 0;
         serviceByte_ = serviceByte_ -8;
       }
 

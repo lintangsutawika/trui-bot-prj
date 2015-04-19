@@ -48,7 +48,10 @@ ARDUINO_OBJ=$(ARDUINO_SRC)pins_arduino.o $(ARDUINO_SRC)wiring.o $(ARDUINO_SRC)wi
 
 # NOTICE: the library linking order does matter 
 # see: http://stackoverflow.com/questions/11111966/eclipse-arduino-linker-trouble
-MASTER_OBJ= ./main/master.cc ./src/ros_lib/time.cpp ./src/ros_lib/duration.cpp ./src/MPU6050/I2Cdev.cpp ./src/MPU6050/MPU6050.cpp
+MASTER_OBJ= ./main/master.cc \
+			./src/ros_lib/time.cpp ./src/ros_lib/duration.cpp \
+			./src/MPU6050/I2Cdev.cpp ./src/MPU6050/MPU6050.cpp ./src/MPU6050/MPU6050_6Axis_MotionApps20.cpp \
+			./src/sensor/oc.cpp
 #./src/comm/arduino_mavlink_packet_handler.cpp 
 MASTER_LIBS= $(TARGET_LIBDIR) -larduino-master -lm
 #MASTER_INCDIR= /opt/ros/indigo/include
@@ -164,4 +167,3 @@ clean:
     
 %.o : %.cpp
 	$(CXX) $< $(ARDUINO_CFLAGS) $(ARDUINO_INC) -c -o $@
-
