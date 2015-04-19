@@ -80,8 +80,6 @@ void run(ros::Rate rate){
   //  }
     
     else {
-    //  count = 0;
-    // // move.angular.x = buttonR1;
       move.linear.x = 0;
       move.linear.y = 0;
       x_eta = 0;

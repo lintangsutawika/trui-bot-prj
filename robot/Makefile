@@ -48,7 +48,7 @@ ARDUINO_OBJ=$(ARDUINO_SRC)pins_arduino.o $(ARDUINO_SRC)wiring.o $(ARDUINO_SRC)wi
 
 # NOTICE: the library linking order does matter 
 # see: http://stackoverflow.com/questions/11111966/eclipse-arduino-linker-trouble
-MASTER_OBJ= ./main/master.cc ./src/ros_lib/time.cpp ./src/ros_lib/duration.cpp
+MASTER_OBJ= ./main/master.cc ./src/ros_lib/time.cpp ./src/ros_lib/duration.cpp ./src/MPU6050/I2Cdev.cpp ./src/MPU6050/MPU6050.cpp
 #./src/comm/arduino_mavlink_packet_handler.cpp 
 MASTER_LIBS= $(TARGET_LIBDIR) -larduino-master -lm
 #MASTER_INCDIR= /opt/ros/indigo/include
@@ -70,10 +70,12 @@ master_main:
 	mkdir -p $(TARGET_INCDIR)/comm
 	mkdir -p $(TARGET_INCDIR)/sensor
 	mkdir -p $(TARGET_INCDIR)/ros_lib
+	mkdir -p $(TARGET_INCDIR)/MPU6050
 	cp ./src/comm/*.hpp $(TARGET_INCDIR)/comm
 	cp ./src/comm/*.h $(TARGET_INCDIR)/comm
 	cp ./src/sensor/*.hpp $(TARGET_INCDIR)/sensor
 	cp ./src/sensor/*.h $(TARGET_INCDIR)/sensor
+	cp ./src/MPU6050/*.h $(TARGET_INCDIR)/MPU6050
 	cp -rf ./src/ros_lib/* $(TARGET_INCDIR)/ros_lib 
 	rm -rf $(TARGET_INCDIR)/ros_lib/examples/ 
 	rm $(TARGET_INCDIR)/ros_lib/*.cpp
