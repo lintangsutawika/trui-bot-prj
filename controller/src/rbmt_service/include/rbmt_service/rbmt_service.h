@@ -28,7 +28,7 @@ class ServiceTeleop {
  private:
   ros::NodeHandle nh_;
   ros::Subscriber joy_sub_;
-  // ros::Subscriber kinect_sub_;
+  ros::Subscriber kinect_sub_;
   ros::Publisher cmd_vel_pub_;
   ros::Publisher cmd_service_pub_;
 
@@ -93,7 +93,7 @@ class ServiceTeleop {
  * buttons.at(10) right analog click
  */
   void joy_sub_cb(const std_msgs::Int16MultiArray::ConstPtr& msg);
-  // void kinect_sub_cb(const geometry_msgs::Twist::ConstPtr& vel_msg);
+  void kinect_sub_cb(const geometry_msgs::Twist::ConstPtr& vel_msg);
 
   // float axis_range(const size_t& ith);
 

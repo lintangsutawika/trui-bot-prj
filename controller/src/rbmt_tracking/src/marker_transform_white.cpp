@@ -103,7 +103,7 @@ void marker_init() {
   line.color.a = 1.0;
 
 
-  marker.lifetime = ros::Duration(1);
+  marker.lifetime = ros::Duration(0.1);
 }
 
 void transformer_white (const geometry_msgs::PoseStamped& sPose)

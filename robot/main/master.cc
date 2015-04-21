@@ -6,6 +6,8 @@
 #include <Wire.h>
 #include <ros_lib/ros.h>
 #include <ros_lib/geometry_msgs/Twist.h>
+// #include <sensor/oc.h>
+
 
 //Robot Kinematic Properties
 #define L 0.45 //in meters, distance from wheel to center
@@ -35,6 +37,8 @@ geometry_msgs::Twist twist_msg;
 
 ros::Publisher chatter("embedded_chat", &twist_msg);
 
+// trui::Oc* g_oc;
+
 
 int sendspeed1,sendspeed2,sendspeed3,hitBuffer;
 float speedX_fromTwist,speedY_fromTwist,speedW_fromTwist;//omega;
@@ -47,6 +51,11 @@ bool do_accelerationY = 0;
 bool do_decceleration = 0;
 bool accelerationAction = 0;
 bool deccelerationAction = 0;
+bool hitPindata;
+bool toggleFlag = 0;
+bool stopFLag = 0;
+int rbmt_command;
+
 // int accel_timerIncY;
 
 void assignSpeed( const geometry_msgs::Twist& rbmt_vel){
@@ -66,17 +75,32 @@ speedX_fromTwist = rbmt_vel.linear.x;
 speedY_fromTwist = rbmt_vel.linear.y;
 speedW_fromTwist = rbmt_vel.angular.z;
 
+rbmt_command     = (int)rbmt_vel.angular.y;
+if((rbmt_command & B00000001) == 1) {} else if((rbmt_command & B00000100) == 0) {}
+if((rbmt_command & B00000010)>>1 == 1) {stopFLag = 1;} else if((rbmt_command & B00000100)>>1 == 0) {stopFLag = 0;}
+if((rbmt_command & B00000100)>>2 == 1) {} else if((rbmt_command & B00000100)>>2 == 0){}
+if((rbmt_command & B00001000)>>3 == 1) {toggleFlag = 1;} else if((rbmt_command & B00000100)>>2 == 0) {toggleFlag = 0;}
 if(rbmt_vel.angular.x == 1) digitalWrite(hitPin,HIGH); else digitalWrite(hitPin,LOW);
+hitPindata = rbmt_vel.angular.x;
 
-// speedX = -trans_speedXFactor*speedX;
-// speedY = trans_speedYFactor*speedY;
 
-//Acceleration & Decceleration profile
-float max_AccelerationX = 1;
-float max_DecelerationX = 1;
-float max_AccelerationY = 3;
-float max_DecelerationY = 3;
 // accelration -> 0 to 1 or 0 to -1, decceleration 1 to 0 or -1 to 0;
+speedW = speedW_fromTwist;
+//Acceleration & Decceleration profile
+//determine the direction of the acceleration;
+//
+float max_Acceleration = 2;
+float max_Deceleration = 0.5;
+
+float max_AccelerationX = max_Acceleration * cos(atan2(speedY_fromTwist, speedX_fromTwist));//all in m/s^2
+float max_DecelerationX = max_Deceleration * cos(atan2(speedY_fromTwist, speedX_fromTwist));
+float max_AccelerationY = max_Acceleration * sin(atan2(speedY_fromTwist, speedX_fromTwist));//all in m/s^2
+float max_DecelerationY = max_Deceleration * sin(atan2(speedY_fromTwist, speedX_fromTwist));
+max_AccelerationX = abs(max_AccelerationX);
+max_AccelerationY = abs(max_AccelerationY);
+max_DecelerationX = abs(max_DecelerationX);
+max_DecelerationY = abs(max_DecelerationY);
+
 //1) see if the target velocity is either positive of negative
 //2) is the speed accelerating (target speed > current) or deccelerating (target speed < current)
 if( speedX_fromTwist > 0){ //Clockwise direction
@@ -122,7 +146,7 @@ if( speedY_fromTwist > 0){ //Clockwise direction
       speedY = speedY + max_AccelerationY*0.01;//max_Acceleration*(10/1000);
     }
   }
-  else if (speedY_fromTwist < speedY){ //deccelerating
+  else if (speedY_fromTwist < 0){// speedY){ //deccelerating
     if(do_accelerationY == 1){
       do_accelerationY = 0;
       speedY = speedY - max_DecelerationY*0.01;//max_Acceleration*(10/1000);
@@ -132,7 +156,7 @@ if( speedY_fromTwist > 0){ //Clockwise direction
 }
 
 else if(speedY_fromTwist < 0){ //Counter clockwise direction
-  if(speedY_fromTwist > speedY){ //deceleration
+  if(speedY_fromTwist > 0){//speedY){ //deceleration
     if(do_accelerationY == 1){
       do_accelerationY = 0;
       speedY = speedY + max_DecelerationY*0.01;//max_Acceleration*(10/1000);
@@ -149,6 +173,19 @@ else if(speedY_fromTwist < 0){ //Counter clockwise direction
 
 else {
   speedY = 0;
+  // if(speedY > speedY_fromTwist){ //deceleration
+    // if(do_accelerationY == 1){
+      // do_accelerationY = 0;
+      // speedY = speedY - max_DecelerationY*0.01;//max_Acceleration*(10/1000);
+    // }
+  // }
+  // else if (speedY < speedY_fromTwist){ //acceleration
+  //   if(do_accelerationY == 1){
+  //     do_accelerationY = 0;
+  //     speedY = speedY + max_DecelerationY*0.01;//max_Acceleration*(10/1000);
+  //   }
+  // }
+  // else speedY = 0;
 }
 
 // if( speedX < speedX_fromTwist){ //acceleration
@@ -199,6 +236,10 @@ ISR(TIMER1_COMPA_vect){
   if(do_accelerationX == 0){do_accelerationX = 1;}
   if(do_accelerationY == 0){do_accelerationY = 1;}
   //PID for orientation control
+  // if (g_oc != NULL) {
+    // omega = g_oc->set_orientation(0, readYaw);
+  // }
+
 }
 
 ros::Subscriber<geometry_msgs::Twist> sub("read_velocity", &assignSpeed );
@@ -257,6 +298,8 @@ int main() {
   const uint8_t position_mode= 0x0B;
   const uint8_t hit_flag = 0x0F;
   const uint8_t rise_flag =0xF0;
+
+  bool toggleCount;
   
   int fromSerial_1[2];
   int fromSerial_2[2];
@@ -268,6 +311,7 @@ int main() {
   nh.advertise(chatter);
   nh.subscribe(sub);
 
+  // g_oc = new trui::Oc();
   // Serial.begin(115200);
   Serial1.begin(9600);
   Serial2.begin(9600);    
@@ -293,9 +337,12 @@ int main() {
   speedY = 0;
   speedW = 0;
   while (true){
-    
+   if(toggleFlag == 1 && toggleCount == 0){toggleCount = 1;toggleReset();}
+   else if(toggleFlag == 0 && toggleCount == 1){toggleCount = 0;}
+
+    // readYaw = g_oc->read_ypr();
   // if(nh.connected()){
-    if(!nh.connected()){
+    if(!nh.connected() || stopFLag == 1){
     //   while(true){
         sendspeed1 = 0;
         sendspeed2 = 0;
@@ -321,12 +368,13 @@ int main() {
     //   // fromSerial_3[1] = Serial3.read();
     //   twist_msg.linear.z = (fromSerial_3[0]);// | (fromSerial_3[1]<<8));
     // }
-    twist_msg.linear.x  = speedY_fromTwist;
-    twist_msg.linear.y  = speedX_fromTwist;
-    twist_msg.linear.z  = 0;
-    twist_msg.angular.x = speedY; //sendspeed1;
-    twist_msg.angular.y = speedX;//sendspeed2;
-    twist_msg.angular.z = 0;//do_acceleration;//sendspeed3;
+
+    twist_msg.linear.x  = sendspeed1;//speedY;
+    twist_msg.linear.y  = sendspeed2;//speedX;
+    twist_msg.linear.z  = sendspeed3;
+    twist_msg.angular.x = speedY_fromTwist;//0;//ypr[0] * (180/PI);
+    twist_msg.angular.y = speedY;//omega;//ypr[1] * (180/PI);
+    twist_msg.angular.z = hitPindata;//readYaw;//ypr[2] * (180/PI);
 
     chatter.publish( &twist_msg );
     
@@ -374,5 +422,8 @@ int main() {
   nh.spinOnce();
   
   }
+
+  // delete g_oc;
+
   return 0;
 }

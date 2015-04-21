@@ -5,7 +5,7 @@ namespace rbmt_service {
 ServiceTeleop::ServiceTeleop(ros::NodeHandle nh): nh_(nh) {
 
   joy_sub_ = nh_.subscribe<std_msgs::Int16MultiArray>("read_joy",1, &ServiceTeleop::joy_sub_cb, this);//get controller command from /read_joy topic
-  // kinect_sub_ = nh_.subscribe<geometry_msgs::Twist>("kinect_velocity",1, &ServiceTeleop::kinect_sub_cb, this);//get controller command from /read_joy topic
+  kinect_sub_ = nh_.subscribe<geometry_msgs::Twist>("kinect_velocity",1, &ServiceTeleop::kinect_sub_cb, this);//get controller command from /read_joy topic
   cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("read_velocity", 100);
   // cmd_service_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("cmd_service", 100);
 }
@@ -14,11 +14,11 @@ ServiceTeleop::~ServiceTeleop() {
 
 }
 
-// void ServiceTeleop::kinect_sub_cb(const geometry_msgs::Twist::ConstPtr& vel_msg) {
-//   vel_kinect_x_ = vel_msg->linear.x;
-//   vel_kinect_y_ = vel_msg->linear.y;
-//   vel_kinect_z_ = vel_msg->angular.z;
-// }
+void ServiceTeleop::kinect_sub_cb(const geometry_msgs::Twist::ConstPtr& vel_msg) {
+  vel_kinect_x_ = vel_msg->linear.x;
+  vel_kinect_y_ = vel_msg->linear.y;
+  vel_kinect_z_ = vel_msg->angular.z;
+}
 
 void ServiceTeleop::joy_sub_cb(const std_msgs::Int16MultiArray::ConstPtr& msg) {
   axisX_          = msg->data[0];
@@ -72,7 +72,7 @@ void ServiceTeleop::run(ros::Rate rate) {
   // axes(5): RT _must_ be initialized because _before_ first update _only_, axes_.at(5) has a normal value of 0, plus, if another axes is pushed before RT is initialized, then RT changes to not-normal value; weird!
   bool RT_initialized = false;
   bool LT_initialized = false;
-  bool squareCount, triangleCount,circleCount, crossCount, R1Count;
+  bool squareCount, triangleCount,circleCount, crossCount, R1Count, StartCount;
 
   ROS_INFO("This is RBMT02, Lock and Load");
   // ROS_INFO("Waiting for LT (axis(2)) and RT (axis(5)) to be initialized.");
@@ -93,27 +93,9 @@ void ServiceTeleop::run(ros::Rate rate) {
     if(axisY_ <= 148 and axisY_ >= 108) axisY_ = 128;
     speedX_ = float(axisX_-128)/128 * 3;///128 * 1.5);//4.5;//map(presentPosition_VX, -128, 127, -4.5, 4.5);
     speedY_ = - float(axisY_-128)/128 * 3;///128 * 1.5);//map(presentPosition_VY, -128, 128, -5, 5);
-    if(buttonR2_ == 1) speedW_ = -1.5; else if(buttonL2_ == 1) speedW_ = 1.5; else speedW_ = 0;
+    if(buttonR2_ == 1) speedW_ = -1.0; else if(buttonL2_ == 1) speedW_ = 1.0; else speedW_ = 0;
 
-    if(buttonL1_ == 1){
-      speedX_ = 0.7*speedX_;
-      speedY_ = 0.7*speedY_;
-    }
-
-    if(buttonTriangle_ == 1){
-
-      cmd_vel.linear.x = vel_kinect_x_; //x_vel;
-      cmd_vel.linear.y = vel_kinect_y_;
-      cmd_vel.linear.z = 0;
-      cmd_vel.angular.x = 0;
-      cmd_vel.angular.y = 0;
-      cmd_vel.angular.z = vel_kinect_z_;//theta_vel;
-    
-    }
-
-    else{
-
-      if(buttonSquare_ == 1 && squareCount == 0){
+    if(buttonSquare_ == 1 && squareCount == 0){
         squareCount = 1;
         serviceByte_ = serviceByte_ + 1;
         ROS_INFO("buttonSquare_ is a Go");
@@ -123,36 +105,48 @@ void ServiceTeleop::run(ros::Rate rate) {
         serviceByte_ = serviceByte_ - 1;
       }
 
-      if(buttonCross_ == 1 && crossCount == 0){
-        crossCount = 1;
-        serviceByte_ = serviceByte_ + 2;
-        ROS_INFO("buttonCross_ is a Go");
-        }
-      else if(buttonCross_ == 0 && crossCount == 1){
-        crossCount = 0;
-        serviceByte_ = serviceByte_ -2;
+    if(buttonCross_ == 1 && crossCount == 0){
+      crossCount = 1;
+      serviceByte_ = serviceByte_ + 2;
+      ROS_INFO("buttonCross_ is a Go");
+      }
+    else if(buttonCross_ == 0 && crossCount == 1){
+      crossCount = 0;
+      serviceByte_ = serviceByte_ -2;
       }
 
-      if(buttonCircle_ == 1 && circleCount == 0){
-        circleCount = 1;
-        serviceByte_ = serviceByte_ +4;
-        ROS_INFO("buttonCircle_ is a Go");
-        }
-      else if(buttonCircle_ == 0 && circleCount == 1){
-        circleCount = 0;
-        serviceByte_ = serviceByte_ -4;
+    if(buttonCircle_ == 1 && circleCount == 0){
+      circleCount = 1;
+      serviceByte_ = serviceByte_ +4;
+      ROS_INFO("buttonCircle_ is a Go");
+      }
+    else if(buttonCircle_ == 0 && circleCount == 1){
+      circleCount = 0;
+      serviceByte_ = serviceByte_ -4;
       }
 
-      if(buttonR1_ == 1 && R1Count == 0){
-        R1Count = 1;
-        serviceByte_ = serviceByte_ +8;
-        ROS_INFO("buttonCircle_ is a Go");
-        }
-      else if(buttonR1_ == 0 && R1Count == 1){
-        R1Count = 0;
-        serviceByte_ = serviceByte_ -8;
+    if(buttonStart_ == 1 && StartCount == 0){
+      StartCount = 1;
+      serviceByte_ = serviceByte_ +8;
+      ROS_INFO("buttonStart_ is a Go");
+      }
+    else if(buttonStart_ == 0 && StartCount == 1){
+      StartCount = 0;
+      serviceByte_ = serviceByte_ -8;
       }
 
+    if(buttonL1_ == 1){
+      // speedX_ = 0.7*speedX_;
+      // speedY_ = 0.7*speedY_;
+      cmd_vel.linear.x = vel_kinect_x_; //x_vel;
+      cmd_vel.linear.y = vel_kinect_y_;
+      cmd_vel.linear.z = 0;
+      cmd_vel.angular.x = buttonR1_;
+      cmd_vel.angular.y = serviceByte_;;
+      cmd_vel.angular.z = vel_kinect_z_;//theta_vel;
+      }
+
+    else if(buttonL1_ == 0){
       cmd_vel.linear.x = speedX_; //x_vel;
       cmd_vel.linear.y = speedY_;
       cmd_vel.linear.z = 0;
@@ -160,7 +154,16 @@ void ServiceTeleop::run(ros::Rate rate) {
       cmd_vel.angular.y = serviceByte_;//no offset after i added the R1 button hmmmm..// + 2; //Seems to have a consistent -2 offset. Don't know why.
       cmd_vel.angular.z = speedW_;//theta_vel;
       // ROS_INFO("%f",cmd_vel.angular.y);
-    }
+      }
+
+    // if(buttonTriangle_ == 1){
+    //   cmd_vel.linear.x = vel_kinect_x_; //x_vel;
+    //   cmd_vel.linear.y = vel_kinect_y_;
+    //   cmd_vel.linear.z = 0;
+    //   cmd_vel.angular.x = 0;
+    //   cmd_vel.angular.y = 0;
+    //   cmd_vel.angular.z = vel_kinect_z_;//theta_vel;   
+    // }
 
 
     
