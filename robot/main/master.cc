@@ -20,10 +20,10 @@
 
 
 #define debugPin 13
-#define hitPin 20
-#define risePin 21
-#define miscPneu1 22
-#define miscPneu2 23
+#define hitPin 24
+#define risePin 25
+#define miscPneu1 26
+#define miscPneu2 27
 #define reset1 41
 #define reset2 42
 #define reset3 43
@@ -89,7 +89,7 @@ speedW = speedW_fromTwist;
 //Acceleration & Decceleration profile
 //determine the direction of the acceleration;
 //
-float max_Acceleration = 2;
+float max_Acceleration = 2.3;
 float max_Deceleration = 0.5;
 
 float max_AccelerationX = max_Acceleration * cos(atan2(speedY_fromTwist, speedX_fromTwist));//all in m/s^2

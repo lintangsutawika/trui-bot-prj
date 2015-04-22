@@ -46,23 +46,23 @@ semiauto (const geometry_msgs::PoseStamped& sPose)
   float x_out = x_temp - x_last;
   float y_out = y_temp - y_last;
   float z_out = z_temp - z_last;
-  ROS_INFO("time_last = %f, time_temp = %d, time_out = %d", time_last, time_temp, time_out);
+  // ROS_INFO("time_last = %f, time_temp = %d, time_out = %d", time_last, time_temp, time_out);
   
   time_last = time_temp;
   x_last = x_temp;
   y_last = y_temp;
   z_last = z_temp;
   
-	v_x = x_temp;//x_out / ((float)time_out / 1000000000);
-	v_y = y_temp;//y_out / ((float)time_out / 1000000000);
-	v_z = 0;//z_out / ((float)time_out / 1000000000);
-  eta = 0;//z_out / v_z;
-  ROS_INFO("Vx : %f, Vy : %f, Vz : %f, ", v_x, v_y, v_z);
+	v_x = x_out / ((float)time_out / 1000000000);
+	v_y = y_out / ((float)time_out / 1000000000);
+	v_z = z_out / ((float)time_out / 1000000000);
+  eta = z_out / v_z;
+  // ROS_INFO("Vx : %f, Vy : %f, Vz : %f, ", v_x, v_y, v_z);
 	
   if(count == 1){
-  x_eta = v_x; //x_temp + (v_x * eta);
-	y_eta = v_y; //y_temp + (v_y * eta);
-  ROS_INFO("x_eta : %f, y_eta : %f, ", x_eta, y_eta);
+  x_eta = x_temp;// + (v_x * eta);
+	y_eta = y_temp;// + (v_y * eta);
+  // ROS_INFO("x_eta : %f, y_eta : %f, ", x_eta, y_eta);
   }
 
 }
@@ -78,6 +78,7 @@ void run(ros::Rate rate){
           // ROS_INFO("move is %f", buttonL1);     
           move.linear.x = x_eta;// / eta;
           move.linear.y = y_eta;// / eta;
+          ROS_INFO("v_x : %f, v_y : %f, ", move.linear.x, move.linear.y);
         }
     
       else {
@@ -111,5 +112,5 @@ main (int argc, char** argv)
   move_pub = nh.advertise<geometry_msgs::Twist>("kinect_velocity", 100);
   ros::Subscriber sub = nh.subscribe ("transformed_pose", 1, semiauto);	
   	
-  run(ros::Rate(100));
+  run(ros::Rate(500));
 }
