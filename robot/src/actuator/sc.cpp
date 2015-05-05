@@ -40,7 +40,7 @@ namespace trui {
     pinMode(dir_pin2_, OUTPUT);
     pinMode(pwm_pin_, OUTPUT);   
     encoder_->reset_Enc();
-    TCCR2B = TCCR2B & 0b11111000 | 0x05; 
+    // TCCR2B = TCCR2B & 0b11111000 | 0x05; 
   }
 
   void Sc::reset(){

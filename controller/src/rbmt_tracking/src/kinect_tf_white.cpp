@@ -11,7 +11,7 @@ int main(int argc, char** argv){
   tf::TransformBroadcaster br;
   tf::Transform transform;
   int i = 0;
-  ros::Rate rate(100.0);
+  //ros::Rate rate(100.0);
   while (nh.ok()){
 
     transform.setOrigin( tf::Vector3(0.0, 0.0, 0.5) );
@@ -20,8 +20,9 @@ int main(int argc, char** argv){
  
     transform.setOrigin( tf::Vector3(0.0, 0.0, -0.5) );
     transform.setRotation(tf::createQuaternionFromRPY((0*M_PI/180),-(22*M_PI/180),(0*M_PI/180)));
+    // transform.setRotation(tf::createQuaternionFromRPY((0*M_PI/180),(0*M_PI/180),(0*M_PI/180)));
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "base_link", "camera_white_link"));
-    rate.sleep();
+    //rate.sleep();
 
   }
   return 0;

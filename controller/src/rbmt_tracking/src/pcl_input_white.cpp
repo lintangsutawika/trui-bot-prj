@@ -49,21 +49,21 @@ cloud_cb_white (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   pass.setInputCloud (temp_cloud);
   // left - right
   pass.setFilterFieldName ("x");
-  pass.setFilterLimits (-3, 3);
+  pass.setFilterLimits (-2, 2);
   //pass.setFilterLimitsNegative (true);
   pass.filter (*cloud_segment);
 
   pass.setInputCloud (cloud_segment);
   // up - down
   pass.setFilterFieldName ("y");
-  pass.setFilterLimits (-4, 4);
+  pass.setFilterLimits (-3, 3);
   //pass.setFilterLimitsNegative (true);
   pass.filter (*cloud_segment);
 
   pass.setInputCloud (cloud_segment);
   // backward - forward
   pass.setFilterFieldName ("z");
-  pass.setFilterLimits (0.5, 3.4);
+  pass.setFilterLimits (0.5, 3);
   //pass.setFilterLimitsNegative (true);
   pass.filter (*cloud_segment);
 

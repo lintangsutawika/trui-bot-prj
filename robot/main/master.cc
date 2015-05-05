@@ -89,7 +89,7 @@ speedW = speedW_fromTwist;
 //Acceleration & Decceleration profile
 //determine the direction of the acceleration;
 //
-float max_Acceleration = 2.3;
+float max_Acceleration = 5;
 float max_Deceleration = 0.5;
 
 float max_AccelerationX = max_Acceleration * cos(atan2(speedY_fromTwist, speedX_fromTwist));//all in m/s^2

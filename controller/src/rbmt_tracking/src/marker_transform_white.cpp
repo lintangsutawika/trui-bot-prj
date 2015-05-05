@@ -53,7 +53,7 @@ void csv_write(const geometry_msgs::PoseStamped& pose,
     csv << lexical_cast<string>(pose.header.stamp.toSec()); csv << ",";
 
     // if (new_sample)
-      csv << "\n";
+    csv << "\n";
   }
   else {
     assert(false && "csv.open(filepath.c_str()): FALSE");
@@ -103,7 +103,7 @@ void marker_init() {
   line.color.a = 1.0;
 
 
-  marker.lifetime = ros::Duration(0.1);
+  marker.lifetime = ros::Duration(1);
 }
 
 void transformer_white (const geometry_msgs::PoseStamped& sPose)
@@ -118,6 +118,7 @@ void transformer_white (const geometry_msgs::PoseStamped& sPose)
   r = sqrt((z_temp*z_temp) + (x_temp*x_temp));
   th = atan(z_temp/x_temp);
   th = th + (22*M_PI/180);
+  // th = th + (0*M_PI/180);
   x_temp = r * cos(th);
   z_temp = r * sin(th);
 
@@ -137,22 +138,22 @@ void transformer_white (const geometry_msgs::PoseStamped& sPose)
   white_pose.pose.position.z = z_temp;
 
   white_pose.header.stamp = ros::Time::now();
-  ROS_INFO_STREAM("Pose x= " << white_pose.pose.position.x << ", Pose y = " << white_pose.pose.position.y << ", Pose z = " << white_pose.pose.position.z);
+  // ROS_INFO_STREAM("Pose x= " << white_pose.pose.position.x << ", Pose y = " << white_pose.pose.position.y << ", Pose z = " << white_pose.pose.position.z);
   transform_pub.publish(white_pose);
-  marker.pose = white_pose.pose;
-  marker.header.stamp = ros::Time::now();
+  // marker.pose = white_pose.pose;
+  // marker.header.stamp = ros::Time::now();
 
-  p.x = white_pose.pose.position.x; // backward - forward
-  p.y = white_pose.pose.position.y; // right - left
-  p.z = white_pose.pose.position.z; // down - up
+  // p.x = white_pose.pose.position.x; // backward - forward
+  // p.y = white_pose.pose.position.y; // right - left
+  // p.z = white_pose.pose.position.z; // down - up
 
   // line.lifetime = ros::Duration(5);
   // points.lifetime = ros::Duration(5);
 
-  line.pose.orientation.w = 1.0;
-  points.pose.orientation.w = 1.0;
-  line.points.push_back(p);
-  points.points.push_back(p);
+  // line.pose.orientation.w = 1.0;
+  // points.pose.orientation.w = 1.0;
+  // line.points.push_back(p);
+  // points.points.push_back(p);
 
   // std::string csv_filepath = "/home/deanzaka/Github/trui-bot-prj/controller/src/rbmt_tracking/bagfiles/test.csv";
   // csv_write(white_pose,csv_filepath);
@@ -181,7 +182,7 @@ int main (int argc, char** argv)
   ros::NodeHandle nh;
 
   // Initialize marker
-  marker_init();
+  // marker_init();
   int count = 0;
 
   // Create a ROS subscriber for raw cock pose
@@ -189,43 +190,6 @@ int main (int argc, char** argv)
 
   transform_pub = nh.advertise<geometry_msgs::PoseStamped>("transformed_pose", 1);
   marker_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 1);
-  // move_pub = nh.advertise<geometry_msgs::Twist>("kinect_velocity", 1,false);
-
-  // ros::Timer timer1 = n.createTimer(ros::Duration(0.1), callback1);
-  // geometry_msgs::PoseStamped msg = ros::topic::waitForMessage<geometry_msgs::PoseStamped>(cock_pose_white, ros::Duration(2));
-    
-
-  // while(nh.ok() and ros::ok()) {
-  //   marker_pub.publish(marker);
-  //   marker_pub.publish(line);
-  //   marker_pub.publish(points);
-
-  //   if ( is_valid(marker) ) {
-  //     if((marker.pose.position.x > 0.05 || marker.pose.position.x < -0.05) && (marker.pose.position.y > 0.05 || marker.pose.position.y < -0.05)) {
-  //       if(marker.pose.position.x > 0) move.linear.x = 1;
-  //       else move.linear.x = -1;
-  //       if(marker.pose.position.y > 0) move.linear.y = -1;
-  //       else move.linear.y = 1;
-  //     }
-  //     else if(marker.pose.position.x > 0.05 || marker.pose.position.x < -0.05) {
-  //       if(marker.pose.position.x > 0) move.linear.x = 1;
-  //       else move.linear.x = -1;
-  //     }
-  //     else if(marker.pose.position.y > 0.05 || marker.pose.position.y < -0.05) {
-  //       if(marker.pose.position.y > 0) move.linear.y = -1;
-  //       else move.linear.y = 1;
-  //     }
-  //   } 
-  //   else {
-  //     move.linear.x = 0;
-  //     move.linear.y = 0; 
-  //   }
-
-  //   move_pub.publish(move);
-  //   ros::Duration(0.1).sleep();
-    // ros::spinOnce();
-  // }
 
   ros::spin();
 }
- 

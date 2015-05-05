@@ -1,6 +1,6 @@
 <launch>  
   
-  <arg name="rviz" default="True" />
+  <arg name="rviz" default="False" />
   <arg name="kinect_black" default="False"/>
   <arg name="kinect_white" default="True"/>
 

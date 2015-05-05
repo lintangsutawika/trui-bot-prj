@@ -5,7 +5,7 @@ namespace rbmt_service {
 ServiceTeleop::ServiceTeleop(ros::NodeHandle nh): nh_(nh) {
 
   joy_sub_ = nh_.subscribe<std_msgs::Int16MultiArray>("read_joy",1, &ServiceTeleop::joy_sub_cb, this);//get controller command from /read_joy topic
-  kinect_sub_ = nh_.subscribe<geometry_msgs::Twist>("kinect_velocity",1, &ServiceTeleop::kinect_sub_cb, this);//get controller command from /read_joy topic
+  motion_sub_ = nh_.subscribe<geometry_msgs::Twist>("traj_motion",1, &ServiceTeleop::motion_sub_cb, this);
   cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("read_velocity", 100);
   // cmd_service_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("cmd_service", 100);
 }
@@ -14,10 +14,10 @@ ServiceTeleop::~ServiceTeleop() {
 
 }
 
-void ServiceTeleop::kinect_sub_cb(const geometry_msgs::Twist::ConstPtr& vel_msg) {
-  vel_kinect_x_ = vel_msg->linear.x;
-  vel_kinect_y_ = vel_msg->linear.y;
-  vel_kinect_z_ = vel_msg->angular.z;
+void ServiceTeleop::motion_sub_cb(const geometry_msgs::Twist::ConstPtr& vel_msg){
+  vel_motion_x_ = vel_msg->linear.x;
+  vel_motion_y_ = vel_msg->linear.y;
+  vel_motion_z_ = vel_msg->angular.z;
 }
 
 void ServiceTeleop::joy_sub_cb(const std_msgs::Int16MultiArray::ConstPtr& msg) {
@@ -89,11 +89,11 @@ void ServiceTeleop::run(ros::Rate rate) {
     // Publish
     geometry_msgs::Twist cmd_vel;
 
-    if(axisX_ <= 148 and axisX_ >= 108) axisX_ = 128;
-    if(axisY_ <= 148 and axisY_ >= 108) axisY_ = 128;
-    speedX_ = float(axisX_-128)/128 * 3;///128 * 1.5);//4.5;//map(presentPosition_VX, -128, 127, -4.5, 4.5);
-    speedY_ = - float(axisY_-128)/128 * 3;///128 * 1.5);//map(presentPosition_VY, -128, 128, -5, 5);
-    if(buttonR2_ == 1) speedW_ = -1.0; else if(buttonL2_ == 1) speedW_ = 1.0; else speedW_ = 0;
+    if(axisX_ <= 156 and axisX_ >= 100) axisX_ = 128;
+    if(axisY_ <= 156 and axisY_ >= 100) axisY_ = 128;
+    speedX_ = float(axisX_-128)/128 * 1;///128 * 1.5);//4.5;//map(presentPosition_VX, -128, 127, -4.5, 4.5);
+    speedY_ = - float(axisY_-128)/128 * 2.5;///128 * 1.5);//map(presentPosition_VY, -128, 128, -5, 5);
+    if(buttonR2_ == 1) speedW_ = -1.5; else if(buttonL2_ == 1) speedW_ = 1.5; else speedW_ = 0;
 
     if(buttonSquare_ == 1 && squareCount == 0){
         squareCount = 1;
@@ -138,12 +138,12 @@ void ServiceTeleop::run(ros::Rate rate) {
     if(buttonL1_ == 1){
       // speedX_ = 0.7*speedX_;
       // speedY_ = 0.7*speedY_;
-      cmd_vel.linear.x = vel_kinect_x_; //x_vel;
-      cmd_vel.linear.y = vel_kinect_y_;
+      cmd_vel.linear.x = vel_motion_x_; //x_vel;
+      cmd_vel.linear.y = vel_motion_y_;
       cmd_vel.linear.z = 0;
       cmd_vel.angular.x = buttonR1_;
-      cmd_vel.angular.y = serviceByte_;;
-      cmd_vel.angular.z = vel_kinect_z_;//theta_vel;
+      cmd_vel.angular.y = serviceByte_;
+      cmd_vel.angular.z = vel_motion_z_;//theta_vel;
       }
 
     else if(buttonL1_ == 0){

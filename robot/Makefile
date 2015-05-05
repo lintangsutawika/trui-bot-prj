@@ -54,7 +54,7 @@ MASTER_LIBS= $(TARGET_LIBDIR) -larduino-master -lm
 #MASTER_INCDIR= /opt/ros/indigo/include
 MASTER_INCFLAGS =  -I $(TARGET_INCDIR) -I $(TARGET_INCDIR)/arduino
 
-SLAVE_OBJ= ./main/slave.cc ./src/sensor/two_phase_incremental_encoder.cpp ./src/sensor/encoder_hctl.cpp  ./src/actuator/motor.cpp ./src/actuator/sc.cpp ./src/pid/pid.c ./src/DynamixelSerial/DynamixelSerial.cpp
+SLAVE_OBJ= ./main/slave.cc ./src/sensor/two_phase_incremental_encoder.cpp ./src/sensor/encoder_hctl.cpp  ./src/actuator/motor.cpp ./src/actuator/sc.cpp ./src/pid/pid.c ./src/DynamixelSerial/DynamixelSerial.cpp ./src/ros_lib/time.cpp ./src/ros_lib/duration.cpp
 #./src/comm/arduino_mavlink_packet_handler.cpp
 SLAVE_LIBS= -L $(TARGET_LIBDIR) -larduino-slave -lm
 SLAVE_INCFLAGS= -I $(TARGET_INCDIR) -I $(TARGET_INCDIR)/arduino 
@@ -87,6 +87,7 @@ slave_main:
 	mkdir -p $(TARGET_INCDIR)/actuator
 	mkdir -p $(TARGET_INCDIR)/pid
 	mkdir -p $(TARGET_INCDIR)/DynamixelSerial
+	mkdir -p $(TARGET_INCDIR)/ros_lib
 	cp ./src/comm/*.hpp $(TARGET_INCDIR)/comm
 	cp ./src/comm/*.h $(TARGET_INCDIR)/comm
 	cp ./src/actuator/*.h $(TARGET_INCDIR)/actuator
@@ -94,6 +95,9 @@ slave_main:
 	cp ./src/sensor/*.h $(TARGET_INCDIR)/sensor
 	cp ./src/pid/*.h $(TARGET_INCDIR)/pid
 	cp ./src/DynamixelSerial/*.h $(TARGET_INCDIR)/DynamixelSerial
+	cp -rf ./src/ros_lib/* $(TARGET_INCDIR)/ros_lib 
+	rm -rf $(TARGET_INCDIR)/ros_lib/examples/ 
+	rm $(TARGET_INCDIR)/ros_lib/*.cpp
 	$(CC) $(SLAVE_CFLAGS) $(SLAVE_INCFLAGS) $^ -o $(TARGET_BUILDDIR)/main.elf $(SLAVE_OBJ) $(SLAVE_LIBS)
 	avr-objcopy -O ihex $(TARGET_BUILDDIR)/main.elf $(TARGET_BUILDDIR)/main.hex
 
