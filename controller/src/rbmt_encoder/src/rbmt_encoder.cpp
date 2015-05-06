@@ -4,8 +4,8 @@ namespace rbmt_encoder {
 
 EncoderCount::EncoderCount(ros::NodeHandle nh): nh_(nh) {
 
-  encoder_X_axis_sub_ = nh_.subscribe<std_msgs::Int32>("encoder_X_axis",1, &EncoderCount::encoder_X_axis_cb_, this);
-  encoder_Y_axis_sub_ = nh_.subscribe<std_msgs::Int32>("encoder_Y_axis",1, &EncoderCount::encoder_Y_axis_cb_, this);
+  encoder_X_axis_sub_ = nh_.subscribe<std_msgs::Int32>("/encoderX/encoder_X_axis",1, &EncoderCount::encoder_X_axis_cb_, this);
+  encoder_Y_axis_sub_ = nh_.subscribe<std_msgs::Int32>("/encoderY/encoder_Y_axis",1, &EncoderCount::encoder_Y_axis_cb_, this);
   calc_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("calculated_velocity", 100);
   calc_odom_pub_ = nh_.advertise<geometry_msgs::Pose2D>("calculated_odometry", 100);
 }

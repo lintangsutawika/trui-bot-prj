@@ -48,21 +48,21 @@ namespace trui {
 
   int64_t Sc::read_encoder(){
     tick_enc_ = encoder_->pos();
-    omega_ = (float)(tick_enc_ - last_tick_enc_)*3000/449;//1500/57;// Tetha = ((tickEnc - last_tickEnc)/57) * 2 * PI rad
-                                             // omega = Tetha / Delta_Time -- Delta_Time = 50ms
-                                             // omega = Tetha / 50ms = ((tickEnc - last_tickEnc)/57) * 2 * PI * 1000/50 rad/s
-                                             // omega = (tickEnc - last_tickEnc) * 40/57 * PI rad/s
-                                             // omega = (tickEnc - last_tickEnc) * 40/57 * PI * (1/(2PI)) rotation/rad rad/s
-                                             // omega = (tickEnc - last_tickEnc) * 20/57 rotation/s
-                                             // omega = (tickEnc - last_tickEnc) * 20/57 rotation/(1/60) minute
-                                             // omega = (tickEnc - last_tickEnc) * 20/57 * 60 rotation/minute
-                                             // omega = (tickEnc - last_tickEnc) * 1200/57 RPM
-                                             // Quadrature -> 300/57 RPM
-                                             // for 13ppr -> 600/449
-    //bla/998 * 2 * pi * 100
-    //3000/449
-    last_tick_enc_ = tick_enc_;  
-    return omega_;//encoder_->pos();
+    // omega_ = (float)(tick_enc_ - last_tick_enc_)*3000/449;//1500/57;// Tetha = ((tickEnc - last_tickEnc)/57) * 2 * PI rad
+    //                                          // omega = Tetha / Delta_Time -- Delta_Time = 50ms
+    //                                          // omega = Tetha / 50ms = ((tickEnc - last_tickEnc)/57) * 2 * PI * 1000/50 rad/s
+    //                                          // omega = (tickEnc - last_tickEnc) * 40/57 * PI rad/s
+    //                                          // omega = (tickEnc - last_tickEnc) * 40/57 * PI * (1/(2PI)) rotation/rad rad/s
+    //                                          // omega = (tickEnc - last_tickEnc) * 20/57 rotation/s
+    //                                          // omega = (tickEnc - last_tickEnc) * 20/57 rotation/(1/60) minute
+    //                                          // omega = (tickEnc - last_tickEnc) * 20/57 * 60 rotation/minute
+    //                                          // omega = (tickEnc - last_tickEnc) * 1200/57 RPM
+    //                                          // Quadrature -> 300/57 RPM
+    //                                          // for 13ppr -> 600/449
+    // //bla/998 * 2 * pi * 100
+    // //3000/449
+    // last_tick_enc_ = tick_enc_;  
+    return encoder_->pos();
   }
 
   void Sc::testing_encoder(){
