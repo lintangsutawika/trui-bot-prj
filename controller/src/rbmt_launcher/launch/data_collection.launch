@@ -4,7 +4,7 @@
   <arg name="rviz_white" default="False" />
   <arg name="kinect_black" default="True"/>
   <arg name="kinect_white" default="False"/>
-  <arg name="end_pose" default="True"/>
+  <arg name="end_pose" default="False"/>
   
   <group if="$(arg kinect_white)">
     <include file="$(find rbmt_tracking)/launch/freenect_white.launch"/>
@@ -12,7 +12,6 @@
     <node pkg="rbmt_tracking" name="kinect_tf_white" type="kinect_tf_white" output="screen"/>
     <node pkg="rbmt_tracking" name="marker_transform_white" type="marker_transform_white" output="screen"/>
   </group>
-
 
   <group if="$(arg kinect_black)">
     <include file="$(find rbmt_tracking)/launch/freenect_black.launch"/>
