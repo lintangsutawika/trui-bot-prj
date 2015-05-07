@@ -62,7 +62,12 @@ namespace trui {
     // //bla/998 * 2 * pi * 100
     // //3000/449
     last_tick_enc_ = tick_enc_;  
-    return encoder_->pos();//omega_;
+    return omega_;
+  }
+
+  int64_t Sc::get_encoder(){
+    tick_enc_ = encoder_->pos();
+    return encoder_->pos();
   }
 
   void Sc::testing_encoder(){
