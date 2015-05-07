@@ -21,7 +21,10 @@ namespace trui {
     mv_=0, iTerm_= 0;    
     delta_=0, error_=0, last_error_=0; 
     data_=0;
-    kp_= 0.4, ki_= 0.05, kd_= 0.02;
+    // kp_= 0.4, ki_= 0.05, kd_= 0.02;
+    // kp_= 0.4, ki_= 0.05, kd_= 5;
+    kp_= 1, ki_= 0.05, kd_= 0.1;
+    // kp_= 1.5, ki_= 0.05, kd_= 0.1;
     // kp_= 0.5, ki_= 0.0528, kd_= 0;//for 50ms sampling time
     setup();
 
@@ -112,7 +115,7 @@ namespace trui {
 
   float Sc::set_speed(float cmd_speed) {
     omega_input_ = cmd_speed; //setpoint
-      tick_enc_ = encoder_->pos();
+      // tick_enc_ = encoder_->pos();
       omega_read_k_ = read_encoder();
       omega_read_refined = (omega_read_k_ + omega_read_k_1_ + omega_read_k_2_ + omega_read_k_3_ + omega_read_k_4_)/5;
       error_ = omega_input_ - omega_read_refined;
@@ -121,7 +124,7 @@ namespace trui {
       if(iTerm_ > outmax_) iTerm_ = outmax_;
       else if(iTerm_ < outmin_) iTerm_ = outmin_;
                     
-      deriv_comp_ = kd_* error_ - deriv_comp_;//(tick_enc_ - 2*last_tick_enc_ + last2_tick_enc_);//*numerator_/denominator_;
+      deriv_comp_ = kd_* (last_error_ - error_);//error_ - deriv_comp_;//(tick_enc_ - 2*last_tick_enc_ + last2_tick_enc_);//*numerator_/denominator_;
                     
       mv_ =  (float)error_*kp_ + iTerm_ + deriv_comp_;
       

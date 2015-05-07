@@ -4,8 +4,6 @@
 #include <actuator/sc.h>
 #include <sensor/two_phase_incremental_encoder.hpp>
 
-#define definedSpeed 100 //RPM
-
 int timer1_counter;
 const int pwm_pin = 11;
 const int dir_pin1 = 12;
@@ -40,13 +38,14 @@ bool resetFlag=0;
 long error=0,thetaDot=0;
 float u_k;
 byte buffer[7] = {0,0,0,0,0,0,0};
-int theta[100];
-int theta_dot[100];
 
 //Array to place measured data
 byte dataFrom_Encoder[3] = {0xCE,0,0};
 int tempRead_Encoder = 0;
-bool sendFlag=0;
+int arrayIndex = 0;
+bool feedbackRequest = 0;
+bool sendRequest = 0;
+bool requestIs_Valid = 1;
 int i;
 
 
@@ -79,15 +78,11 @@ void setup()
 
 ISR(TIMER1_COMPA_vect)        // interrupt service routine 
 {
+  //interrupts();
   
-  theta_dot[i] = sc.set_speed(speed);
-  theta[i] = sc.get_pos();
-  if(i < 100){
-    i++; 
-  }
-  else {
-    sendFlag =1; i = 101;
-  }
+  // if(buffer[3] == 0xCC) sc.set_speed(-speed);//u_k = speed;//speed = (-1)*speed;
+    // else if(buffer[3] == 0x0C) sc.set_speed(speed);//u_k = -speed;
+  tempRead_Encoder = sc.set_speed(speed);
   
   // if(requestIs_Valid == 0){
     
@@ -122,20 +117,31 @@ int main() {
   int incoming_byte = 0;
   
   int flag=0;
-  int j = 0;
+  // speed = 71;//
   while (true) {
 
-    if(sendFlag == 0) speed = definedSpeed;
-    else {
-      speed = 0;
-      sendFlag=0;
-      for(j = 0; j<100; j++){
-        Serial.print(theta[j]);
-        Serial.print(",");
-        Serial.println(theta_dot[j]);
+    if (Serial.available() >= 7) {
+      if(Serial.read() == 0xCE ){
+      buffer[1] = Serial.read(); //LSB
+      buffer[2] = Serial.read(); //MSB
+      buffer[3] = Serial.read(); //Feedback request flag
+      buffer[4] = Serial.read(); //Checksum
+      buffer[5] = Serial.read(); //Checksum
+      buffer[6] = Serial.read();
+        }
       }
-    break; //Exit loop;
-    }    
+
+    
+    bufferSpeed = ((buffer[2]<<8) | (buffer[1]));//bufferSpeed;
+    speed = bufferSpeed;
+    //Reset the encoder every time the setpoint is 0 RPM
+    // if(speed == 0) {if(resetFlag == 0) {sc.reset(); resetFlag =1;}} else {resetFlag = 0;} //if speed is not 0, the resetFlag is set to 0 again
+    // dataFrom_Encoder[1] = (tempRead_Encoder & 0x00FF);
+    // dataFrom_Encoder[2] = ((tempRead_Encoder & 0xFF00)>>8);
+    // Serial.write(dataFrom_Encoder,3);
+    Serial.println(tempRead_Encoder);
+    // sc.testing_encoder();
+    
 
   }
 

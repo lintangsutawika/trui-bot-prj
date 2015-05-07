@@ -4,7 +4,7 @@
 #include <actuator/sc.h>
 #include <sensor/two_phase_incremental_encoder.hpp>
 
-#define definedSpeed 100 //RPM
+
 
 int timer1_counter;
 const int pwm_pin = 11;
@@ -28,6 +28,7 @@ const float Kd = 0.005;
 
 float speed=0;
 float bufferSpeed=0;
+float definedSpeed = 10; //RPM
 
 float e_k_=0;
 float e_k_1_=0;
@@ -40,7 +41,8 @@ bool resetFlag=0;
 long error=0,thetaDot=0;
 float u_k;
 byte buffer[7] = {0,0,0,0,0,0,0};
-int theta[100];
+int theta[200];
+int theta_dot[200];
 
 //Array to place measured data
 byte dataFrom_Encoder[3] = {0xCE,0,0};
@@ -79,14 +81,13 @@ void setup()
 ISR(TIMER1_COMPA_vect)        // interrupt service routine 
 {
   
-  tempRead_Encoder = sc.get_pos();
-  sc.set_speed(speed);
-  theta[i] = tempRead_Encoder;
-  if(i < 100){
+  theta_dot[i] = sc.set_speed(speed);
+  // theta[i] = sc.get_pos();
+  if(i < 200){
     i++; 
   }
   else {
-    sendFlag =1; i = 101;
+    sendFlag =1; i = 201;
   }
   
   // if(requestIs_Valid == 0){
@@ -118,24 +119,27 @@ int main() {
   Serial.begin(9600); //For normal operation
   // Serial.begin(115200); //Debugging use only
 
-  long timeNow = 0, timeOld = 0;
+  // long timeNow = 0, timeOld = 0;
   int incoming_byte = 0;
   
   int flag=0;
   int j = 0;
+  // sendFlag = 1;
   while (true) {
 
     if(sendFlag == 0) speed = definedSpeed;
     else {
-      speed = 0;
+      // speed = definedSpeed;
+      // speed = 0;
       sendFlag=0;
-      for(j = 0; j<100; j++){
-        Serial.println(theta[j]);
+      for(j = 0; j<200; j++){
+        // Serial.print(theta[j]);
+        // Serial.print(",");
+        Serial.println(theta_dot[j]);
       }
     break; //Exit loop;
-    }    
-
+    }
+    delay(1);    
   }
-
   return 0;
 }
