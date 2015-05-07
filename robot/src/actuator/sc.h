@@ -31,6 +31,7 @@ class Sc {
     void PIDvelocity_algorithm(float speed,float Kp,float Ki,float Kd,float delta_T);
     int64_t read_encoder();
     int64_t get_encoder();
+    int64_t Sc::get_pos();
     void testing_encoder();
 
    private:

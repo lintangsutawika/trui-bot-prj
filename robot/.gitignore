@@ -2,3 +2,5 @@
 build
 lib
 include
+main/slave.cc
+main/master.cc
