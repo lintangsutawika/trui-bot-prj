@@ -21,7 +21,7 @@ namespace trui {
     mv_=0, iTerm_= 0;    
     delta_=0, error_=0, last_error_=0; 
     data_=0;
-    kp_= 0.4, ki_= 0.05, kd_= 0;//0.01;
+    kp_= 0.4, ki_= 0.05, kd_= 0.02;
     // kp_= 0.5, ki_= 0.0528, kd_= 0;//for 50ms sampling time
     setup();
 
@@ -39,7 +39,8 @@ namespace trui {
     pinMode(dir_pin1_, OUTPUT);
     pinMode(dir_pin2_, OUTPUT);
     pinMode(pwm_pin_, OUTPUT);   
-    encoder_->reset_Enc(); 
+    encoder_->reset_Enc();
+    // TCCR2B = TCCR2B & 0b11111000 | 0x05; 
   }
 
   void Sc::reset(){
@@ -48,19 +49,17 @@ namespace trui {
 
   int64_t Sc::read_encoder(){
     tick_enc_ = encoder_->pos();
-    omega_ = (float)(tick_enc_ - last_tick_enc_)*3000/449;//1500/57;// Tetha = ((tickEnc - last_tickEnc)/57) * 2 * PI rad
-    //                                          // omega = Tetha / Delta_Time -- Delta_Time = 50ms
-    //                                          // omega = Tetha / 50ms = ((tickEnc - last_tickEnc)/57) * 2 * PI * 1000/50 rad/s
-    //                                          // omega = (tickEnc - last_tickEnc) * 40/57 * PI rad/s
-    //                                          // omega = (tickEnc - last_tickEnc) * 40/57 * PI * (1/(2PI)) rotation/rad rad/s
-    //                                          // omega = (tickEnc - last_tickEnc) * 20/57 rotation/s
-    //                                          // omega = (tickEnc - last_tickEnc) * 20/57 rotation/(1/60) minute
-    //                                          // omega = (tickEnc - last_tickEnc) * 20/57 * 60 rotation/minute
-    //                                          // omega = (tickEnc - last_tickEnc) * 1200/57 RPM
-    //                                          // Quadrature -> 300/57 RPM
-    //                                          // for 13ppr -> 600/449
-    // //bla/998 * 2 * pi * 100
-    // //3000/449
+    omega_ = (float)(tick_enc_ - last_tick_enc_)*1500/57;//3000/449;// Tetha = ((tickEnc - last_tickEnc)/57) * 2 * PI rad
+                                             // omega = Tetha / Delta_Time -- Delta_Time = 50ms
+                                             // omega = Tetha / 50ms = ((tickEnc - last_tickEnc)/57) * 2 * PI * 1000/50 rad/s
+                                             // omega = (tickEnc - last_tickEnc) * 40/57 * PI rad/s
+                                             // omega = (tickEnc - last_tickEnc) * 40/57 * PI * (1/(2PI)) rotation/rad rad/s
+                                             // omega = (tickEnc - last_tickEnc) * 20/57 rotation/s
+                                             // omega = (tickEnc - last_tickEnc) * 20/57 rotation/(1/60) minute
+                                             // omega = (tickEnc - last_tickEnc) * 20/57 * 60 rotation/minute
+                                             // omega = (tickEnc - last_tickEnc) * 1200/57 RPM
+                                             // Quadrature -> 300/57 RPM
+                                             // for 13ppr -> 600/449
     last_tick_enc_ = tick_enc_;  
     return omega_;
   }
@@ -118,9 +117,9 @@ namespace trui {
       if(iTerm_ > outmax_) iTerm_ = outmax_;
       else if(iTerm_ < outmin_) iTerm_ = outmin_;
                     
-      deriv_comp_ = (tick_enc_ - 2*last_tick_enc_ + last2_tick_enc_);//*numerator_/denominator_;
+      deriv_comp_ = kd_* error_ - deriv_comp_;//(tick_enc_ - 2*last_tick_enc_ + last2_tick_enc_);//*numerator_/denominator_;
                     
-      mv_ =  (float)error_*kp_ + iTerm_ - deriv_comp_*kd_;
+      mv_ =  (float)error_*kp_ + iTerm_ + deriv_comp_;
       
  
 
@@ -132,7 +131,7 @@ namespace trui {
       omega_read_k_3_ = omega_read_k_2_;
       omega_read_k_2_ = omega_read_k_;
       last_error_ = error_;
-      return error_;//omega_read_refined;
+      return omega_read_refined;
       // last2_tick_enc_ = last_tick_enc_; 
       // last_tick_enc_ = tick_enc_;    
   }
