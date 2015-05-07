@@ -115,22 +115,22 @@ float MoveMotion::PID_Y(float targetPosition, float currentPosition){
   // }
 
   // Calculate Iterm and limit integral runaway
-  if(I_Factor != 0){
+  // if(I_Factor != 0){
     temp = sumError + errorPID_Y;
-    if(temp > maxSumError){
-      i_term = MAX_I_TERM;
-      sumError = maxSumError;
-    }
-    else if(temp < -maxSumError){
-      i_term = -MAX_I_TERM;
-      sumError = -maxSumError;
-    }
-    else{
+  //   if(temp > maxSumError){
+  //     i_term = MAX_I_TERM;
+  //     sumError = maxSumError;
+  //   }
+  //   else if(temp < -maxSumError){
+  //     i_term = -MAX_I_TERM;
+  //     sumError = -maxSumError;
+  //   }
+  //   else{
       sumError = temp;
       i_term = I_Factor * sumError;
-    }
-  }
-  else i_term =0;
+    // }
+  // }
+  // else i_term =0;
 
   // Calculate Dterm
   d_term = D_Factor * (lastPosition - currentPosition);
@@ -155,15 +155,16 @@ void MoveMotion::run(ros::Rate rate) {
   float speedX_,speedY_,speedW_;
   float q_X, q_Y, t;
   float deltaX = 0;
-  float deltaY = 2;
-  float T = 3;
+  float deltaY = 3;
+  float T = 10;
   float q_double_dot_X,q_double_dot_Y;
   float x_zero,y_zero;
   // Publish
   geometry_msgs::Twist cmd_vel;
   // ros::Timer timer_sub_ = nh_.createTimer(ros::Duration(0.01), &MoveMotion::timer_cb);
   ROS_INFO("RBMT_MOTION is a go");
-
+  sumError = 0;
+  errorPID_Y = 0;
   x_zero = x_encoder;
   y_zero = y_encoder;
   while (ros::ok()) {
@@ -192,6 +193,7 @@ void MoveMotion::run(ros::Rate rate) {
         //csvWrite v_now dan x_encoder
 
         //For Open Loop Control
+        speedW_ = 0;
         speedX_ = 0;//(q_X - (x_encoder - x_zero))/ 0.01;
         if(q_double_dot_Y * t < minSpeed) speedY_ = minSpeed;
           else 
@@ -202,15 +204,7 @@ void MoveMotion::run(ros::Rate rate) {
 
         ROS_INFO("T = %f, t = %f, q_Y = %f, y_encoder = %f, speedY_ = %f, errorPID_Y = %f",T,t,q_Y,y_encoder, speedY_, errorPID_Y);
         
-        cmd_vel.linear.x = t; //x_vel;
-        cmd_vel.linear.y = speedX_;
-        cmd_vel.linear.z = speedY_;
-        cmd_vel.angular.x = 0;
-        cmd_vel.angular.y = x_encoder;
-        cmd_vel.angular.z = y_encoder;//speedW_;//theta_vel;
-      
-        std::string csv_filepath = "/home/lintang-sutawika/krai/trui-bot-prj/controller/src/rbmt_motion/test.csv";
-        csv_write(cmd_vel,csv_filepath);
+
       }
     }
 
@@ -221,8 +215,16 @@ void MoveMotion::run(ros::Rate rate) {
     //ROS_DEBUG_STREAM_COND(debug, "cmd_vel.linear.x= "<< cmd_vel.linear.x);
     //ROS_DEBUG_STREAM_COND(debug, "cmd_vel.linear.y= "<< cmd_vel.linear.y);
     //ROS_DEBUG_STREAM_COND(debug, "cmd_vel.angular.z= "<< cmd_vel.angular.z);
-
+    cmd_vel.linear.x = speedX_; //x_vel;
+    cmd_vel.linear.y = speedY_;
+    cmd_vel.linear.z = 0;
+    cmd_vel.angular.x = 0;
+    cmd_vel.angular.y = 0;//x_encoder;
+    cmd_vel.angular.z = speedW_;//y_encoder;//speedW_;//theta_vel;
     cmd_vel_pub_.publish(cmd_vel);  
+    std::string csv_filepath = "/home/lintang-sutawika/krai/trui-bot-prj/controller/src/rbmt_motion/test.csv";
+    csv_write(cmd_vel,csv_filepath);
+    
 
     // ros::spin();
     ros::spinOnce();

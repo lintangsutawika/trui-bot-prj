@@ -20,16 +20,16 @@
 #include <std_msgs/Int16MultiArray.h>
 #include "std_msgs/String.h"
 
-#define P_Factor 1
-#define I_Factor 0
-#define D_Factor 0
+#define P_Factor 2.5
+#define I_Factor 0.02
+#define D_Factor 1.5
 #define MAX_I_TERM 3
 #define maxSumError 3
 #define MAX_INT 4
 #define maxError 3
 #define SCALING_FACTOR 1
 
-#define minSpeed 0.2
+#define minSpeed 0
 
 
 namespace rbmt_motion {
