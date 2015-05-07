@@ -70,8 +70,8 @@ namespace trui {
   }
 
   int64_t Sc::get_pos(){ //Special method just for recording. gets data from set_speed method
-    tick_enc_ = encoder_->pos();
-    return encoder_->pos();
+    int64_t enc_pos_ = tick_enc_;
+    return enc_pos_;
   }
 
   void Sc::testing_encoder(){
@@ -113,7 +113,6 @@ namespace trui {
   float Sc::set_speed(float cmd_speed) {
     omega_input_ = cmd_speed; //setpoint
       tick_enc_ = encoder_->pos();
-
       omega_read_k_ = read_encoder();
       omega_read_refined = (omega_read_k_ + omega_read_k_1_ + omega_read_k_2_ + omega_read_k_3_ + omega_read_k_4_)/5;
       error_ = omega_input_ - omega_read_refined;

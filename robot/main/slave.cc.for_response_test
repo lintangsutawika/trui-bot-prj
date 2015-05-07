@@ -51,7 +51,8 @@ void setup()
 
 ISR(TIMER1_COMPA_vect){
 
-  tempRead_Encoder = sc.get_encoder();
+  tempRead_Encoder = sc.get_pos();
+  sc.get_encoder();
   sendFlag =1;
 }
 
