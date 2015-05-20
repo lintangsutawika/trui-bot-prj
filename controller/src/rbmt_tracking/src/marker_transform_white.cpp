@@ -138,7 +138,7 @@ void transformer_white (const geometry_msgs::PoseStamped& sPose)
   white_pose.pose.position.z = z_temp;
 
   white_pose.header.stamp = ros::Time::now();
-  // ROS_INFO_STREAM("Pose x= " << white_pose.pose.position.x << ", Pose y = " << white_pose.pose.position.y << ", Pose z = " << white_pose.pose.position.z);
+  ROS_INFO_STREAM("Pose x= " << white_pose.pose.position.x << ", Pose y = " << white_pose.pose.position.y << ", Pose z = " << white_pose.pose.position.z);
   transform_pub.publish(white_pose);
   // marker.pose = white_pose.pose;
   // marker.header.stamp = ros::Time::now();

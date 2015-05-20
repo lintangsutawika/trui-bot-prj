@@ -12,10 +12,10 @@ int main(int argc, char** argv){
   
 
   // ROS_INFO("Waiting for nav stuff to be ready");
-  ros::Duration(5.0).sleep();
+  // ros::Duration(5.0).sleep();
 
   // tracker.run_dummy(ros::Rate(1.0));
-  tracker.run(ros::Rate(10));
+  tracker.run(ros::Rate(100));
 
   return(0);
 }

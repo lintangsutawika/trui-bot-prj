@@ -49,7 +49,7 @@ cloud_cb_white (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   pass.setInputCloud (temp_cloud);
   // left - right
   pass.setFilterFieldName ("x");
-  pass.setFilterLimits (-2, 2);
+  pass.setFilterLimits (-2, 4);
   //pass.setFilterLimitsNegative (true);
   pass.filter (*cloud_segment);
 
@@ -85,8 +85,11 @@ cloud_cb_white (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
     geometry_msgs::PoseStamped sPose;
     sPose.header.stamp = ros::Time::now();
     
-    sPose.pose.position.x = sum_z; // equals to z in pcl // backward - forward
-    sPose.pose.position.y = -(sum_x); // equals to -x in pcl // right - left
+    // sPose.pose.position.x = sum_z; // equals to z in pcl // backward - forward
+    // sPose.pose.position.y = -(sum_x); // equals to -x in pcl // right - left
+    // sPose.pose.position.z = -(sum_y); // equals to -y in pcl // down - up
+    sPose.pose.position.y = sum_z; // equals to z in pcl // backward - forward
+    sPose.pose.position.x = (sum_x); // equals to -x in pcl // right - left
     sPose.pose.position.z = -(sum_y); // equals to -y in pcl // down - up
 
     sPose.pose.orientation.x = 0.0;
