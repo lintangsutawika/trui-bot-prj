@@ -22,7 +22,7 @@ SLAVE_CPU_SPEED=-DF_CPU=16000000UL
 SLAVE_CFLAGS=$(SLAVE_MCU) $(SLAVE_CPU_SPEED) -Os -w -Wl,--gc-sections -ffunction-sections -fdata-sections
 SLAVE_LIBNAME=lib$(SLAVE_BOARD)-slave.a
 SLAVE_UPLOAD_BAUDRATE=57600 #: 57600 (for promini m328p), 115200 (for mega m2560, uno m328p)
-SLAVE_PORT=/dev/ttyUSB0
+SLAVE_PORT=/dev/ttyUSB1
 
 CONTROL_MCU=-mmcu=atmega328p
 CONTROL_MCU_TAG=m328p
@@ -48,7 +48,10 @@ ARDUINO_OBJ=$(ARDUINO_SRC)pins_arduino.o $(ARDUINO_SRC)wiring.o $(ARDUINO_SRC)wi
 
 # NOTICE: the library linking order does matter 
 # see: http://stackoverflow.com/questions/11111966/eclipse-arduino-linker-trouble
-MASTER_OBJ= ./main/master.cc ./src/ros_lib/time.cpp ./src/ros_lib/duration.cpp
+MASTER_OBJ= ./main/master.cc \
+			./src/ros_lib/time.cpp ./src/ros_lib/duration.cpp \
+			./src/MPU6050/I2Cdev.cpp ./src/MPU6050/MPU6050.cpp ./src/MPU6050/MPU6050_6Axis_MotionApps20.cpp \
+			./src/sensor/oc.cpp
 #./src/comm/arduino_mavlink_packet_handler.cpp 
 MASTER_LIBS= $(TARGET_LIBDIR) -larduino-master -lm
 #MASTER_INCDIR= /opt/ros/indigo/include
