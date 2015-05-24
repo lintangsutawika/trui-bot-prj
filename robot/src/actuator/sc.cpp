@@ -24,7 +24,7 @@ namespace trui {
     // kp_= 0.4, ki_= 0.05, kd_= 0.02;
     // kp_= 0.4, ki_= 0.05, kd_= 5;
     // kp_= 1, ki_= 0.05, kd_= 0.1;
-    kp_= 4, ki_= 0.15, kd_= 3;
+    kp_= 4, ki_= 0.15, kd_= 0.5;
     // kp_= 1.5, ki_= 0.05, kd_= 0.1;
     // kp_= 0.5, ki_= 0.0528, kd_= 0;//for 50ms sampling time
     setup();

@@ -20,9 +20,14 @@
 #include <std_msgs/Int16MultiArray.h>
 #include "std_msgs/String.h"
 
-#define P_Factor 2.5
-#define I_Factor 0.02
-#define D_Factor 1.5
+#define P_Factor_speed 2.5
+#define I_Factor_speed 0.02
+#define D_Factor_speed 1.5
+
+#define P_Factor_omega 0.0
+#define I_Factor_omega 0.0
+#define D_Factor_omega 0.0
+
 #define MAX_I_TERM 3
 #define maxSumError 3
 #define MAX_INT 4
@@ -70,9 +75,13 @@ class MoveMotion {
   float y_encoder;
 
 
-  float sumError;
+  float sumError_speed;
   float lastPosition;
   float errorPID_Y;
+
+  float sumError_omega;
+  float lastTheta;
+  float errorPID_omega;
   // int buttons_;
 
   std::vector<float> axis_mins_;

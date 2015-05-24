@@ -28,7 +28,7 @@ const float Kd = 0.005;
 
 float speed=0;
 float bufferSpeed=0;
-float definedSpeed = 20; //RPM
+float definedSpeed = 100; //RPM
 
 float e_k_=0;
 float e_k_1_=0;

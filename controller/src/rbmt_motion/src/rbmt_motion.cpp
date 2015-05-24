@@ -98,25 +98,14 @@ void MoveMotion::csv_write(const geometry_msgs::Twist& vel, const std::string& f
 
 float MoveMotion::PID_Y(float targetPosition, float currentPosition){
   float outputPID_speed;
-  float temp;
-  float p_term, i_term, d_term;
+  float temp_speed;
+  float p_term_speed, i_term_speed, d_term_speed;
 
   errorPID_Y = targetPosition - currentPosition;
 
-  // Calculate Pterm and limit error overflow
-  // if (errorPID_Y > maxError){
-    // p_term = MAX_INT;
-  // }
-  // else if (errorPID_Y < maxError){
-    // p_term = -MAX_INT;
-  // }
-  // else{
-    p_term = errorPID_Y;//P_Factor * errorPID_Y;
-  // }
+  p_term_speed = P_Factor_speed * errorPID_Y;
 
-  // Calculate Iterm and limit integral runaway
-  // if(I_Factor != 0){
-    temp = sumError + errorPID_Y;
+  temp_speed = sumError_speed + errorPID_Y;
   //   if(temp > maxSumError){
   //     i_term = MAX_I_TERM;
   //     sumError = maxSumError;
@@ -126,18 +115,18 @@ float MoveMotion::PID_Y(float targetPosition, float currentPosition){
   //     sumError = -maxSumError;
   //   }
   //   else{
-      sumError = temp;
-      i_term = I_Factor * sumError;
+  sumError_speed = temp_speed;
+  i_term_speed = I_Factor_speed * sumError_speed;
     // }
   // }
   // else i_term =0;
 
   // Calculate Dterm
-  d_term = D_Factor * (lastPosition - currentPosition);
+  d_term_speed = D_Factor_speed * (lastPosition - currentPosition);
 
   lastPosition = currentPosition;
 
-  outputPID_speed = (p_term + i_term + d_term) / SCALING_FACTOR;
+  outputPID_speed = (p_term_speed + i_term_speed + d_term_speed);// / SCALING_FACTOR;
   // if(outputPID_speed > MAX_INT){
   //   outputPID_speed = MAX_INT;
   // }
@@ -146,6 +135,58 @@ float MoveMotion::PID_Y(float targetPosition, float currentPosition){
   // }
 
   return outputPID_speed;
+}
+
+float MoveMotion::PID_Theta(float targetTheta, float currentTheta){
+  float outputPID_omega;
+  float temp_omega;
+  float p_term_omega, i_term_omega, d_term_omega;
+
+  errorPID_omega = targetTheta - currentTheta;
+
+  // Calculate Pterm and limit error overflow
+  // if (errorPID_Y > maxError){
+    // p_term = MAX_INT;
+  // }
+  // else if (errorPID_Y < maxError){
+    // p_term = -MAX_INT;
+  // }
+  // else{
+    p_term_omega = P_Factor_omega * errorPID_omega;
+  // }
+
+  // Calculate Iterm and limit integral runaway
+  // if(I_Factor != 0){
+    temp_omega = sumError_omega + errorPID_Y;
+  //   if(temp > maxSumError){
+  //     i_term = MAX_I_TERM;
+  //     sumError = maxSumError;
+  //   }
+  //   else if(temp < -maxSumError){
+  //     i_term = -MAX_I_TERM;
+  //     sumError = -maxSumError;
+  //   }
+  //   else{
+      sumError_omega = temp_omega;
+      i_term_omega = I_Factor_omega * sumError_omega;
+    // }
+  // }
+  // else i_term =0;
+
+  // Calculate Dterm
+  d_term_omega = D_Factor_omega * (lastTheta - currentTheta);
+
+  lastTheta = currentTheta;
+
+  outputPID_omega = (p_term_omega + i_term_omega + d_term_omega);
+  // if(outputPID_speed > MAX_INT){
+  //   outputPID_speed = MAX_INT;
+  // }
+  // else if(outputPID_speed < -MAX_INT){
+  //  outputPID_speed = -MAX_INT;
+  // }
+
+  return outputPID_omega;
 }
 
 void MoveMotion::run(ros::Rate rate) {
@@ -169,38 +210,40 @@ void MoveMotion::run(ros::Rate rate) {
   y_zero = y_encoder;
   while (ros::ok()) {
 
-    //With a parabolic trajectory, acceleration is a constant
-    q_double_dot_X = (2/(T*T))*deltaX; //acceleration along the x axis
-    q_double_dot_Y = (2/(T*T))*deltaY; //acceleration along the y axis
-    testFlag == 1;
-    //Trajectory Generation
+    // //With a parabolic trajectory, acceleration is a constant
+    // q_double_dot_X = (2/(T*T))*deltaX; //acceleration along the x axis
+    // q_double_dot_Y = (2/(T*T))*deltaY; //acceleration along the y axis
+    // testFlag == 1;
+    // //Trajectory Generation
     
-    if(t > T){
+    if(testFlag == 0){
       speedX_ = 0;
       speedY_ = 0;
       speedW_ = 0;
       x_zero = x_encoder;
       y_zero = y_encoder;
-      // t = 0;
+      t = 0;
     }
     
     else {
       if(t_inc_flag == 1  && testFlag == 1 && t <= T){
         t_inc_flag = 0;
         t = t + 0.01;
-        q_X = (1/(T*T))*deltaX*(t*t);
-        q_Y = (1/(T*T))*deltaY*(t*t);
-        //csvWrite v_now dan x_encoder
+    //     q_X = (1/(T*T))*deltaX*(t*t);
+    //     q_Y = (1/(T*T))*deltaY*(t*t);
+    //     //csvWrite v_now dan x_encoder
 
-        //For Open Loop Control
-        speedW_ = 0;
-        speedX_ = 0;//(q_X - (x_encoder - x_zero))/ 0.01;
-        if(q_double_dot_Y * t < minSpeed) speedY_ = minSpeed;
-          else 
-          speedY_ = q_double_dot_Y * t;
+    //     //For Open Loop Control
+    //     speedW_ = 0;
+    //     speedX_ = 0;//(q_X - (x_encoder - x_zero))/ 0.01;
+    //     if(q_double_dot_Y * t < minSpeed) speedY_ = minSpeed;
+    //       else 
+    //       speedY_ = q_double_dot_Y * t;
 
-        // For Closed Loop Control
-        // speedY_ = PID_Y(q_Y, y_encoder);
+    //     // For Closed Loop Control
+    //     // speedY_ = PID_Y(q_Y, y_encoder);
+
+        
 
         ROS_INFO("T = %f, t = %f, q_Y = %f, y_encoder = %f, speedY_ = %f, errorPID_Y = %f",T,t,q_Y,y_encoder, speedY_, errorPID_Y);
         
