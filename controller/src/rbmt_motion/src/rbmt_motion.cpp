@@ -28,6 +28,7 @@ void MoveMotion::timer_cb(const ros::TimerEvent& e){
 void MoveMotion::odom_sub_cb(const geometry_msgs::Pose2D::ConstPtr& odom_msg){
   x_encoder = odom_msg->x;
   y_encoder = odom_msg->y;
+  z_imu   = odom_msg->theta; 
   // ROS_INFO("%f",y_encoder);
 }
 
@@ -195,17 +196,19 @@ void MoveMotion::run(ros::Rate rate) {
   // Set the values based on joy readings
   float speedX_,speedY_,speedW_;
   float q_X, q_Y, t;
-  float deltaX = 0;
-  float deltaY = 3;
-  float T = 10;
+  float h_X = 0;
+  float h_Y = 2;
+  float T = 5;
   float q_double_dot_X,q_double_dot_Y;
   float x_zero,y_zero;
   // Publish
   geometry_msgs::Twist cmd_vel;
   // ros::Timer timer_sub_ = nh_.createTimer(ros::Duration(0.01), &MoveMotion::timer_cb);
   ROS_INFO("RBMT_MOTION is a go");
-  sumError = 0;
+  sumError_omega = 0;
+  sumError_speed = 0;
   errorPID_Y = 0;
+  errorPID_omega = 0;
   x_zero = x_encoder;
   y_zero = y_encoder;
   while (ros::ok()) {
@@ -216,21 +219,21 @@ void MoveMotion::run(ros::Rate rate) {
     // testFlag == 1;
     // //Trajectory Generation
     
-    if(testFlag == 0){
+    if(t > T){
       speedX_ = 0;
       speedY_ = 0;
       speedW_ = 0;
       x_zero = x_encoder;
       y_zero = y_encoder;
-      t = 0;
+      // t = 0;
     }
     
     else {
       if(t_inc_flag == 1  && testFlag == 1 && t <= T){
         t_inc_flag = 0;
         t = t + 0.01;
-    //     q_X = (1/(T*T))*deltaX*(t*t);
-    //     q_Y = (1/(T*T))*deltaY*(t*t);
+        q_X = (1/(T*T))*h_X*(t*t);
+        q_Y = (1/(T*T))*h_Y*(t*t);
     //     //csvWrite v_now dan x_encoder
 
     //     //For Open Loop Control
@@ -242,10 +245,27 @@ void MoveMotion::run(ros::Rate rate) {
 
     //     // For Closed Loop Control
     //     // speedY_ = PID_Y(q_Y, y_encoder);
+        s_encoder = sqrt(y_encoder*y_encoder + x_encoder*x_encoder); 
+        theta_imu = z_imu;
+        d_traj = sqrt(q_X*q_X + q_Y*q_Y);
 
-        
+        body_alpha = PID_Theta(theta_traj, z_imu);
+        body_accel = PID_Y(d_traj, s_encoder); 
+        body_omega = alpha_sum + body_alpha*0.01;
+        body_vel = accel_sum + body_accel*0.01;
 
-        ROS_INFO("T = %f, t = %f, q_Y = %f, y_encoder = %f, speedY_ = %f, errorPID_Y = %f",T,t,q_Y,y_encoder, speedY_, errorPID_Y);
+        deltaX = q_X - x_encoder;
+        deltaY = q_Y - y_encoder;
+        if(deltaX == 0 && deltaY > 0) psi = 90;
+        else if(deltaX == 0 && deltaY < 0) psi = -90;
+        else psi = atan2(deltaX, deltaY);
+
+        speedY_ = body_vel*sin((psi / 180.0f) * M_PI);
+        speedX_ = body_vel*cos((psi / 180.0f) * M_PI);
+        speedW_ = body_omega;
+
+
+        ROS_INFO("t,%f,qY,%f,y,%f,vY,%f,psi,%f,x,%f,vX,%f,theta,%f,z,%f,vW,%f,",t,q_Y,y_encoder,speedY_,psi,x_encoder,speedX_,theta_traj,z_imu,speedW_);
         
 
       }

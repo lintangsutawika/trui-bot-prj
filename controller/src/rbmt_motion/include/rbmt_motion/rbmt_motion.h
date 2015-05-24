@@ -20,9 +20,9 @@
 #include <std_msgs/Int16MultiArray.h>
 #include "std_msgs/String.h"
 
-#define P_Factor_speed 2.5
-#define I_Factor_speed 0.02
-#define D_Factor_speed 1.5
+#define P_Factor_speed 100.0
+#define I_Factor_speed 0.0
+#define D_Factor_speed 0.0
 
 #define P_Factor_omega 0.0
 #define I_Factor_omega 0.0
@@ -73,6 +73,23 @@ class MoveMotion {
 
   float x_encoder;
   float y_encoder;
+  float z_imu;
+
+  float s_encoder;
+  float psi;
+  float theta_imu;
+
+  float body_alpha;
+  float body_omega;
+  float body_accel;
+  float body_vel;
+  float accel_sum;
+  float alpha_sum;
+
+  float d_traj;
+  float theta_traj;
+  float deltaX;
+  float deltaY;
 
 
   float sumError_speed;
@@ -120,6 +137,7 @@ class MoveMotion {
   void joy_sub_cb(const std_msgs::Int16MultiArray::ConstPtr& msg);
   void kinect_sub_cb(const geometry_msgs::Twist::ConstPtr& vel_msg);
   float PID_Y(float targetPosition, float currentPosition);
+  float PID_Theta(float targetTheta, float currentTheta);
   // float axis_range(const size_t& ith);
 
   // float axis_range_ratio(const size_t& ith);
