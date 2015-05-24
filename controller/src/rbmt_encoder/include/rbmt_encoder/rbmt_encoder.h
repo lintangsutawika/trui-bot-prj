@@ -13,6 +13,8 @@
 #include <actionlib/client/terminal_state.h>
 #include <tf/transform_datatypes.h>
 #include <std_msgs/Int32.h>
+#include <std_msgs/Int16.h>
+#include <std_msgs/Int16MultiArray.h>
 
 
 namespace rbmt_encoder {
@@ -28,6 +30,8 @@ class EncoderCount {
   ros::NodeHandle nh_;
   ros::Subscriber encoder_X_axis_sub_;
   ros::Subscriber encoder_Y_axis_sub_;
+  ros::Subscriber imu_Z_axis_sub_;
+  ros::Subscriber joy_sub_;
   ros::Publisher calc_vel_pub_;
   ros::Publisher calc_odom_pub_;
 
@@ -37,10 +41,14 @@ class EncoderCount {
   int encoder_tick_y_;
   int last_encoder_tick_x_;
   int last_encoder_tick_y_;
+  float imu_yaw_z_;
+  int buttonSelect_;
   
   
   void encoder_X_axis_cb_(const std_msgs::Int32::ConstPtr& enc_msg);
   void encoder_Y_axis_cb_(const std_msgs::Int32::ConstPtr& enc_msg);
+  void imu_Z_axis_cb_(const geometry_msgs::Twist::ConstPtr& imu_z_msg);
+  void joy_sub_cb_(const std_msgs::Int16MultiArray::ConstPtr& msg);
   // float axis_range(const size_t& ith);
 
   // float axis_range_ratio(const size_t& ith);
