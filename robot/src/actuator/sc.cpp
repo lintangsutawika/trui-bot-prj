@@ -24,7 +24,7 @@ namespace trui {
     // kp_= 0.4, ki_= 0.05, kd_= 0.02;
     // kp_= 0.4, ki_= 0.05, kd_= 5;
     // kp_= 1, ki_= 0.05, kd_= 0.1;
-    kp_= 5, ki_= 0.15, kd_= 3;
+    kp_= 4, ki_= 0.15, kd_= 3;
     // kp_= 1.5, ki_= 0.05, kd_= 0.1;
     // kp_= 0.5, ki_= 0.0528, kd_= 0;//for 50ms sampling time
     setup();
@@ -53,7 +53,7 @@ namespace trui {
 
   int64_t Sc::read_encoder(){
     tick_enc_ = encoder_->pos();
-    omega_ = (float)(tick_enc_ - last_tick_enc_)*1500.0/133.0;//57.0;//133.0;//3000.0/449;// Tetha = ((tickEnc - last_tickEnc)/57) * 2 * PI rad
+    omega_ = (float)(tick_enc_ - last_tick_enc_)*1500.0/133.0;//57.0//3000.0/449;// Tetha = ((tickEnc - last_tickEnc)/57) * 2 * PI rad
                                              // omega = Tetha / Delta_Time -- Delta_Time = 10ms
                                              // omega = Tetha / 10ms = ((tickEnc - last_tickEnc)/57) * 2 * PI * 1000/10 rad/s
                                              // omega = (tickEnc - last_tickEnc) * 200/57 * PI rad/s
@@ -131,8 +131,10 @@ namespace trui {
       
  
 
-      if(mv_ > outmax_) mv_ = outmax_;
-      else if(mv_ < outmin_) mv_ = outmin_;
+      if((cmd_speed > 0 && mv_ < 0) || (cmd_speed < 0 && mv_ > 0)) mv_ = 0;//outmax_;
+      else if(cmd_speed > 0 && mv_ > 255) mv_ = 255;
+      else if(cmd_speed < 0 && mv_ < -255) mv_ = -255;
+      else if (cmd_speed == 0) mv_ = 0;
                     
       outSignal(mv_); 
       omega_read_k_4_ = omega_read_k_3_;

@@ -28,7 +28,7 @@ const float Kd = 0.005;
 
 float speed=0;
 float bufferSpeed=0;
-float definedSpeed = 10; //RPM
+float definedSpeed = 20; //RPM
 
 float e_k_=0;
 float e_k_1_=0;
@@ -130,13 +130,15 @@ int main() {
     if(sendFlag == 0) speed = definedSpeed;
     else {
       // speed = definedSpeed;
-      // speed = 0;
+      speed = 0;
       sendFlag=0;
       for(j = 0; j<200; j++){
         // Serial.print(theta[j]);
         // Serial.print(",");
         Serial.println(theta_dot[j]);
       }
+    delay(100);
+    speed = 0;
     break; //Exit loop;
     }
     delay(1);    
