@@ -21,8 +21,8 @@ long tempRead_Encoder = 0;
 ros::NodeHandle nh;
 std_msgs::Int32 enc_msg;
 
-ros::Publisher chatter("encoder_X_axis", &enc_msg);
-// ros::Publisher chatter("encoder_Y_axis", &enc_msg);
+// ros::Publisher chatter("encoder_X_axis", &enc_msg);
+ros::Publisher chatter("encoder_Y_axis", &enc_msg);
 
 trui::Sc sc(pwm_pin, dir_pin1,dir_pin2, encoder_out_a_pin, encoder_out_b_pin, encoder_resolution,outmax, outmin);
 

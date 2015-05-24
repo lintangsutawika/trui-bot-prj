@@ -91,8 +91,8 @@ void ServiceTeleop::run(ros::Rate rate) {
 
     if(axisX_ <= 156 and axisX_ >= 100) axisX_ = 128;
     if(axisY_ <= 156 and axisY_ >= 100) axisY_ = 128;
-    speedX_ = float(axisX_-128)/128 * 1;///128 * 1.5);//4.5;//map(presentPosition_VX, -128, 127, -4.5, 4.5);
-    speedY_ = - float(axisY_-128)/128 * 2.5;///128 * 1.5);//map(presentPosition_VY, -128, 128, -5, 5);
+    speedX_ = float(axisX_-128)/128 * 1.2;///128 * 1.5);//4.5;//map(presentPosition_VX, -128, 127, -4.5, 4.5);
+    speedY_ = - float(axisY_-128)/128 * 1.2;///128 * 1.5);//map(presentPosition_VY, -128, 128, -5, 5);
     if(buttonR2_ == 1) speedW_ = -1.5; else if(buttonL2_ == 1) speedW_ = 1.5; else speedW_ = 0;
 
     if(buttonSquare_ == 1 && squareCount == 0){
