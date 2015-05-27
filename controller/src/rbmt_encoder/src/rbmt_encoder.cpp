@@ -67,7 +67,7 @@ void EncoderCount::run(ros::Rate rate) {
     calc_vel.linear.y = speed_body_Y_;
     calc_vel_pub_.publish(calc_vel);
 
-    calc_odom.x = /*-enc_wheel_radius **/ (encoder_tick_x_- x_zero_);///1440.0 * 3.14159;
+    calc_odom.x = -enc_wheel_radius *(encoder_tick_x_- x_zero_)/1440.0 * 3.14159;
     calc_odom.y = enc_wheel_radius * (encoder_tick_y_ - y_zero_)/1440 * 3.14159;
     calc_odom.theta = -(imu_yaw_z_ - theta_zero_);
     calc_odom_pub_.publish(calc_odom);

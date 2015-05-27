@@ -97,12 +97,12 @@ void MoveMotion::csv_write(const geometry_msgs::Twist& vel, const std::string& f
   csv.close();
 } 
 
-float MoveMotion::PID_Y(float targetPosition, float currentPosition){
+float MoveMotion::PID_Y(float targetPositionX,float targetPositionY, float currentPositionX, float currentPositionY){
   float outputPID_speed;
   float temp_speed;
   float p_term_speed, i_term_speed, d_term_speed;
 
-  errorPID_Y = targetPosition - currentPosition;
+  errorPID_Y = sqrt((targetPositionX - currentPositionX)*(targetPositionX - currentPositionX) + (targetPositionY - currentPositionY)*(targetPositionY - currentPositionY));
 
   p_term_speed = P_Factor_speed * errorPID_Y;
 
@@ -123,9 +123,9 @@ float MoveMotion::PID_Y(float targetPosition, float currentPosition){
   // else i_term =0;
 
   // Calculate Dterm
-  d_term_speed = D_Factor_speed * (lastPosition - currentPosition);
-
-  lastPosition = currentPosition;
+  d_term_speed = D_Factor_speed * (lastError - errorPID_Y);
+  lastError = errorPID_Y;
+  // lastPosition = currentPosition;
 
   outputPID_speed = (p_term_speed + i_term_speed + d_term_speed);// / SCALING_FACTOR;
   // if(outputPID_speed > MAX_INT){
@@ -145,35 +145,12 @@ float MoveMotion::PID_Theta(float targetTheta, float currentTheta){
 
   errorPID_omega = targetTheta - currentTheta;
 
-  // Calculate Pterm and limit error overflow
-  // if (errorPID_Y > maxError){
-    // p_term = MAX_INT;
-  // }
-  // else if (errorPID_Y < maxError){
-    // p_term = -MAX_INT;
-  // }
-  // else{
-    p_term_omega = P_Factor_omega * errorPID_omega;
-  // }
-
-  // Calculate Iterm and limit integral runaway
-  // if(I_Factor != 0){
-    temp_omega = sumError_omega + errorPID_Y;
-  //   if(temp > maxSumError){
-  //     i_term = MAX_I_TERM;
-  //     sumError = maxSumError;
-  //   }
-  //   else if(temp < -maxSumError){
-  //     i_term = -MAX_I_TERM;
-  //     sumError = -maxSumError;
-  //   }
-  //   else{
-      sumError_omega = temp_omega;
-      i_term_omega = I_Factor_omega * sumError_omega;
-    // }
-  // }
-  // else i_term =0;
-
+  p_term_omega = P_Factor_omega * errorPID_omega;
+  
+  temp_omega = sumError_omega + errorPID_Y;
+  sumError_omega = temp_omega;
+  i_term_omega = I_Factor_omega * sumError_omega;
+  // if i_term_omega >
   // Calculate Dterm
   d_term_omega = D_Factor_omega * (lastTheta - currentTheta);
 
@@ -194,11 +171,11 @@ void MoveMotion::run(ros::Rate rate) {
   const bool debug = false;
 
   // Set the values based on joy readings
-  float speedX_,speedY_,speedW_;
-  float q_X, q_Y, t;
+  float speedX_=0,speedY_=0,speedW_=0;
+  float q_X, q_Y, t=0;
   float h_X = 0;
   float h_Y = 2;
-  float T = 5;
+  float T = 2;
   float q_double_dot_X,q_double_dot_Y;
   float x_zero,y_zero;
   // Publish
@@ -211,11 +188,15 @@ void MoveMotion::run(ros::Rate rate) {
   errorPID_omega = 0;
   x_zero = x_encoder;
   y_zero = y_encoder;
+  // testFlag = 1;
+  alpha_sum = 0;
+  accel_sum = 0;
+  q_double_dot_X = (2/(T*T))*h_X; //acceleration along the x axis
+  q_double_dot_Y = (2/(T*T))*h_Y; //acceleration along the y axis
+    
   while (ros::ok()) {
 
     // //With a parabolic trajectory, acceleration is a constant
-    // q_double_dot_X = (2/(T*T))*deltaX; //acceleration along the x axis
-    // q_double_dot_Y = (2/(T*T))*deltaY; //acceleration along the y axis
     // testFlag == 1;
     // //Trajectory Generation
     
@@ -225,6 +206,12 @@ void MoveMotion::run(ros::Rate rate) {
       speedW_ = 0;
       x_zero = x_encoder;
       y_zero = y_encoder;
+      cmd_vel.linear.x = speedX_; //x_vel;
+      cmd_vel.linear.y = speedY_;
+      cmd_vel.linear.z = 0;
+      cmd_vel.angular.x = 0;
+      cmd_vel.angular.y = 0;//x_encoder;
+      cmd_vel.angular.z = speedW_;//y_encoder;//speedW_;//theta_vel;
       // t = 0;
     }
     
@@ -237,35 +224,40 @@ void MoveMotion::run(ros::Rate rate) {
     //     //csvWrite v_now dan x_encoder
 
     //     //For Open Loop Control
-    //     speedW_ = 0;
-    //     speedX_ = 0;//(q_X - (x_encoder - x_zero))/ 0.01;
+        // speedW_ = 0;
+        // speedX_ = q_double_dot_X*t;//(q_X - (x_encoder - x_zero))/ 0.01;
     //     if(q_double_dot_Y * t < minSpeed) speedY_ = minSpeed;
     //       else 
-    //       speedY_ = q_double_dot_Y * t;
+          // speedY_ = q_double_dot_Y * t;
 
-    //     // For Closed Loop Control
-    //     // speedY_ = PID_Y(q_Y, y_encoder);
         s_encoder = sqrt(y_encoder*y_encoder + x_encoder*x_encoder); 
         theta_imu = z_imu;
         d_traj = sqrt(q_X*q_X + q_Y*q_Y);
 
-        body_alpha = PID_Theta(theta_traj, z_imu);
-        body_accel = PID_Y(d_traj, s_encoder); 
-        body_omega = alpha_sum + body_alpha*0.01;
+        // body_alpha = PID_Theta(theta_traj, z_imu);
+        body_accel = PID_Y(q_X,q_Y,x_encoder,y_encoder);//d_traj, s_encoder); 
+        body_omega = 0;//alpha_sum + body_alpha*0.01;
         body_vel = accel_sum + body_accel*0.01;
 
         deltaX = q_X - x_encoder;
         deltaY = q_Y - y_encoder;
         if(deltaX == 0 && deltaY > 0) psi = 90;
         else if(deltaX == 0 && deltaY < 0) psi = -90;
-        else psi = atan2(deltaX, deltaY);
+        else psi = (atan2(deltaY, deltaX)) * 57.2957795;
 
         speedY_ = body_vel*sin((psi / 180.0f) * M_PI);
         speedX_ = body_vel*cos((psi / 180.0f) * M_PI);
         speedW_ = body_omega;
 
-
-        ROS_INFO("t,%f,qY,%f,y,%f,vY,%f,psi,%f,x,%f,vX,%f,theta,%f,z,%f,vW,%f,",t,q_Y,y_encoder,speedY_,psi,x_encoder,speedX_,theta_traj,z_imu,speedW_);
+        cmd_vel.linear.x = speedX_; //x_vel;
+        cmd_vel.linear.y = speedY_;
+        cmd_vel.linear.z = 0;
+        cmd_vel.angular.x = 0;
+        cmd_vel.angular.y = 0;//x_encoder;
+        cmd_vel.angular.z = speedW_;//y_encoder;//speedW_;//theta_vel;
+        std::string csv_filepath = "/home/lintang-sutawika/krai/trui-bot-prj/controller/src/rbmt_motion/test.csv";
+        csv_write(cmd_vel,csv_filepath);
+        ROS_INFO("t,%f,qY,%f,y,%f,vY,%f,q_X,%f,x,%f,vX,%f,theta,%f,z,%f,vW,%f,",psi,q_Y,y_encoder,speedY_,q_X,x_encoder,speedX_,theta_traj,z_imu,speedW_);
         
 
       }
@@ -278,15 +270,9 @@ void MoveMotion::run(ros::Rate rate) {
     //ROS_DEBUG_STREAM_COND(debug, "cmd_vel.linear.x= "<< cmd_vel.linear.x);
     //ROS_DEBUG_STREAM_COND(debug, "cmd_vel.linear.y= "<< cmd_vel.linear.y);
     //ROS_DEBUG_STREAM_COND(debug, "cmd_vel.angular.z= "<< cmd_vel.angular.z);
-    cmd_vel.linear.x = speedX_; //x_vel;
-    cmd_vel.linear.y = speedY_;
-    cmd_vel.linear.z = 0;
-    cmd_vel.angular.x = 0;
-    cmd_vel.angular.y = 0;//x_encoder;
-    cmd_vel.angular.z = speedW_;//y_encoder;//speedW_;//theta_vel;
-    cmd_vel_pub_.publish(cmd_vel);  
-    std::string csv_filepath = "/home/lintang-sutawika/krai/trui-bot-prj/controller/src/rbmt_motion/test.csv";
-    csv_write(cmd_vel,csv_filepath);
+    
+    cmd_vel_pub_.publish(cmd_vel); 
+    
     
 
     // ros::spin();

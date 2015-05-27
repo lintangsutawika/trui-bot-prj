@@ -263,7 +263,7 @@ int main() {
     buffer1[5]= (checksum1 & 0xFF00) >> 8;
 
 
-    analogWrite(13,buffer1[1]);
+    analogWrite(13,speedY*150.0);//buffer1[1]);
 
     buffer2[0]= header;
     buffer2[6]= footer;
