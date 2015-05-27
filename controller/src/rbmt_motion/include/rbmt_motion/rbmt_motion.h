@@ -20,7 +20,7 @@
 #include <std_msgs/Int16MultiArray.h>
 #include "std_msgs/String.h"
 
-#define P_Factor_speed 20.0
+#define P_Factor_speed 25.0
 #define I_Factor_speed 0.0
 #define D_Factor_speed 0.0
 
