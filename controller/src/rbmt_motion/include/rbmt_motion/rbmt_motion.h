@@ -20,13 +20,13 @@
 #include <std_msgs/Int16MultiArray.h>
 #include "std_msgs/String.h"
 
-#define P_Factor_speed 30.0
-#define I_Factor_speed 0.0
+#define P_Factor_speed 900.0
+#define I_Factor_speed 0.4
 #define D_Factor_speed 0.0
 
-#define P_Factor_omega 0.0
-#define I_Factor_omega 0.0
-#define D_Factor_omega 0.0
+#define P_Factor_omega 4.5
+#define I_Factor_omega 0.005
+#define D_Factor_omega 0.5
 
 #define MAX_I_TERM 3
 #define maxSumError 3
@@ -55,7 +55,8 @@ class MoveMotion {
   ros::Subscriber odom_sub_;
   ros::Subscriber kinect_sub_;
   ros::Publisher cmd_vel_pub_;
-  ros::Publisher cmd_service_pub_;
+  ros::Subscriber pose_sub_;
+  // ros::Publisher cmd_service_pub_;
 
   size_t n_axes_;
   size_t n_button_;
@@ -65,11 +66,17 @@ class MoveMotion {
   
 
   int buttonL1_;
+  int buttonSelect_;
+  int selectCounter;
   bool testFlag;
 
   float vel_kinect_x_;
   float vel_kinect_y_;
   float vel_kinect_z_;
+
+  float poseX;
+  float poseY;
+  float poseZ;
 
   float x_encoder;
   float y_encoder;
@@ -139,6 +146,7 @@ class MoveMotion {
   void kinect_sub_cb(const geometry_msgs::Twist::ConstPtr& vel_msg);
   float PID_Y(float targetPositionX,float targetPositionY, float currentPositionX, float currentPositionY);
   float PID_Theta(float targetTheta, float currentTheta);
+  void kinect_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& pose_msg);
   // float axis_range(const size_t& ith);
 
   // float axis_range_ratio(const size_t& ith);

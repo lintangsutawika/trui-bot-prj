@@ -13,11 +13,18 @@ MoveMotion::MoveMotion(ros::NodeHandle nh): nh_(nh) {
   odom_sub_ = nh_.subscribe<geometry_msgs::Pose2D>("calculated_odometry", 1, &MoveMotion::odom_sub_cb, this);
   kinect_sub_ = nh_.subscribe<geometry_msgs::Twist>("kinect_velocity",1, &MoveMotion::kinect_sub_cb, this);//get controller command from /read_joy topic
   cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("read_velocity", 100);//("traj_motion", 100);
+  pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("transformed_pose", 1, &MoveMotion::kinect_pose_cb, this); 
   // cmd_service_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("cmd_service", 100);
 }
 
 MoveMotion::~MoveMotion() {
 
+}
+
+void MoveMotion::kinect_pose_cb(const geometry_msgs::PoseStamped::ConstPtr& pose_msg){
+  poseX = pose_msg->pose.position.x;
+  poseY = pose_msg->pose.position.y;
+  poseZ = pose_msg->pose.position.z;
 }
 
 void MoveMotion::timer_cb(const ros::TimerEvent& e){
@@ -41,12 +48,21 @@ void MoveMotion::kinect_sub_cb(const geometry_msgs::Twist::ConstPtr& vel_msg) {
 void MoveMotion::joy_sub_cb(const std_msgs::Int16MultiArray::ConstPtr& msg) {
 
   buttonL1_       = msg->data[12];
+  buttonSelect_   = msg->data[17];
+  if(buttonSelect_ == 1){
+    selectCounter = 1;
+  }
+  else if(buttonSelect_ == 0){
+    //Reset encoders
+  }
+
   if(buttonL1_ == 1){
     testFlag = 1;
   }
   else if(buttonL1_ == 0){
     //Reset encoders
   }
+
 
   
   // buttonsR1_
@@ -169,15 +185,18 @@ float MoveMotion::PID_Theta(float targetTheta, float currentTheta){
 
 void MoveMotion::run(ros::Rate rate) {
   const bool debug = false;
-
+  selectCounter = 0;
   // Set the values based on joy readings
   float speedX_=0,speedY_=0,speedW_=0;
   float q_X, q_Y, t=0;
-  float h_X = 0;
-  float h_Y = 2;
-  float T = 2;
+  float h_X = 0.258;//0.707;//0.258;//0.5;//0.707;//0.258;//0.358;//0.5;//0.358;//0.258;
+  float h_Y = 0.966;//0.966;//0.866;//0.707;//0.966;//0.933;//0.965;
+  float T = 1.4;
   float q_double_dot_X,q_double_dot_Y;
   float x_zero,y_zero;
+  float psiCorrection;
+  float h_Xsetpoint;
+  float h_Ysetpoint;
   // Publish
   geometry_msgs::Twist cmd_vel;
   // ros::Timer timer_sub_ = nh_.createTimer(ros::Duration(0.01), &MoveMotion::timer_cb);
@@ -191,10 +210,66 @@ void MoveMotion::run(ros::Rate rate) {
   // testFlag = 1;
   alpha_sum = 0;
   accel_sum = 0;
-  q_double_dot_X = (2/(T*T))*h_X; //acceleration along the x axis
-  q_double_dot_Y = (2/(T*T))*h_Y; //acceleration along the y axis
-    
+
+  buttonL1_ = 0;
+  testFlag = 0;
+      //   h_Y = poseY - 1.3 - 0.044;
+    //   h_X = (-poseX) - 0.1274;
+      h_Xsetpoint = h_X;
+      h_Ysetpoint = h_Y;
+      float currentPsi = atan2(h_Y,h_X) * 57.2957795;
+      // ROS_INFO("%f",h_X);
+      if(currentPsi > 31 && currentPsi <= 75) {
+        psiCorrection = (currentPsi - 6.1733)/0.7764;
+        h_X = cos((psiCorrection / 180.0f) * M_PI);
+        h_Y = sin((psiCorrection / 180.0f) * M_PI);
+      }
+      else if(currentPsi >= 105 && currentPsi <=  150){
+        psiCorrection = (currentPsi - 33.801)/0.7882;
+        h_X = cos((psiCorrection / 180.0f) * M_PI);
+        h_Y = sin((psiCorrection / 180.0f) * M_PI);
+      }
+      else if(currentPsi < 105 && currentPsi >  75){
+        psiCorrection = (currentPsi + 65.99)/1.7386;
+        h_X = cos((psiCorrection / 180.0f) * M_PI);
+        h_Y = sin((psiCorrection / 180.0f) * M_PI);
+      }
+
+      else {
+        h_X = h_X;
+        h_Y = h_Y;
+      }
+
+    q_double_dot_X = (2/(T*T))*h_X; //acceleration along the x axis
+    q_double_dot_Y = (2/(T*T))*h_Y; //acceleration along the y axis
+      
   while (ros::ok()) {
+    // // ROS_INFO("%d",testFlag);
+    //   if(buttonSelect_ == 0 && selectCounter == 0){
+
+    //   h_Y = poseY - 1.3 - 0.044;
+    //   h_X = (-poseX) - 0.1274;
+    //   float currentPsi = atan2(h_Y,h_X) * 57.2957795;
+    //   // ROS_INFO("%f",h_X);
+    //   // if(currentPsi > 31 && currentPsi <= 75) {
+    //   //   psiCorrection = (currentPsi - 6.1733)/0.7764;
+    //   //   h_X = cos((psiCorrection / 180.0f) * M_PI);
+    //   //   h_Y = sin((psiCorrection / 180.0f) * M_PI);
+    //   // }
+    //   // else if(currentPsi >= 105 && currentPsi <=  150){
+    //   //   psiCorrection = (currentPsi - 33.801)/0.7882;
+    //   //   h_X = cos((psiCorrection / 180.0f) * M_PI);
+    //   //   h_Y = sin((psiCorrection / 180.0f) * M_PI);
+    //   // }
+    //   // else {
+    //   //   h_X = h_X;
+    //   //   h_Y = h_Y;
+    //   // }
+      
+      // q_double_dot_X = (2/(T*T))*h_X; //acceleration along the x axis
+      // q_double_dot_Y = (2/(T*T))*h_Y; //acceleration along the y axis
+        
+    //   }
 
     // //With a parabolic trajectory, acceleration is a constant
     // testFlag == 1;
@@ -219,22 +294,20 @@ void MoveMotion::run(ros::Rate rate) {
       if(t_inc_flag == 1  && testFlag == 1 && t <= T){
         t_inc_flag = 0;
         t = t + 0.01;
-        q_X = (1/(T*T))*h_X*(t*t);
-        q_Y = (1/(T*T))*h_Y*(t*t);
+        q_X = (1/(T*T))*h_Xsetpoint*(t*t);
+        q_Y = (1/(T*T))*h_Ysetpoint*(t*t);
     //     //csvWrite v_now dan x_encoder
 
     //     //For Open Loop Control
-        // speedW_ = 0;
-        // speedX_ = q_double_dot_X*t;//(q_X - (x_encoder - x_zero))/ 0.01;
-    //     if(q_double_dot_Y * t < minSpeed) speedY_ = minSpeed;
-    //       else 
-          // speedY_ = q_double_dot_Y * t;
+        speedW_ = 0;
+        speedX_ = q_double_dot_X*t;//(q_X - (x_encoder - x_zero))/ 0.01;
+        speedY_ = q_double_dot_Y * t;
 
         s_encoder = sqrt(y_encoder*y_encoder + x_encoder*x_encoder); 
         theta_imu = z_imu;
         d_traj = sqrt(q_X*q_X + q_Y*q_Y);
-
-        // body_alpha = PID_Theta(theta_traj, z_imu);
+        theta_traj = 0;
+        body_alpha = PID_Theta(theta_traj, z_imu);
         body_accel = PID_Y(q_X,q_Y,x_encoder,y_encoder);//d_traj, s_encoder); 
         body_omega = 0;//alpha_sum + body_alpha*0.01;
         body_vel = accel_sum + body_accel*0.01;
@@ -245,8 +318,8 @@ void MoveMotion::run(ros::Rate rate) {
         else if(deltaX == 0 && deltaY < 0) psi = -90;
         else psi = (atan2(deltaY, deltaX)) * 57.2957795;
 
-        speedY_ = body_vel*sin((psi / 180.0f) * M_PI);
-        speedX_ = body_vel*cos((psi / 180.0f) * M_PI);
+        // speedY_ = body_vel*sin((psi / 180.0f) * M_PI);
+        // speedX_ = body_vel*cos((psi / 180.0f) * M_PI);
         speedW_ = body_omega;
 
         cmd_vel.linear.x = speedX_; //x_vel;
@@ -257,7 +330,7 @@ void MoveMotion::run(ros::Rate rate) {
         cmd_vel.angular.z = speedW_;//y_encoder;//speedW_;//theta_vel;
         std::string csv_filepath = "/home/lintang-sutawika/krai/trui-bot-prj/controller/src/rbmt_motion/test.csv";
         csv_write(cmd_vel,csv_filepath);
-        ROS_INFO("t,%f,qY,%f,y,%f,vY,%f,q_X,%f,x,%f,vX,%f,theta,%f,z,%f,vW,%f,",psi,q_Y,y_encoder,speedY_,q_X,x_encoder,speedX_,theta_traj,z_imu,speedW_);
+        ROS_INFO("t,%f,psiC,%f,qY,%f,y,%f,vY,%f,q_X,%f,x,%f,vX,%f,theta,%f,z,%f,vW,%f,",t,psiCorrection,q_Y,y_encoder,speedY_,q_X,x_encoder,speedX_,theta_traj,z_imu,speedW_);
         
 
       }
